@@ -1,6 +1,6 @@
-# Frontend
+﻿# Frontend
 
-React-Frontend fuer das Projektdashboard.
+React-Frontend für das Projektdashboard.
 
 ## Start
 ```powershell

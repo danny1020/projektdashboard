@@ -1,18 +1,18 @@
-export default function App() {
+﻿export default function App() {
   return (
     <main className="app-shell">
       <section className="hero-card">
         <span className="eyebrow">Frontend Setup</span>
         <h1>Das React-Frontend ist startklar.</h1>
         <p>
-          Dieser Ordner ist jetzt als echtes React-/Vite-Projekt vorbereitet und kann von euch als Basis
-          fuer Board, Ticket-Modal und Dashboard verwendet werden.
+          Dieser Ordner dient als React-/Vite-Projektgrundlage und kann als Basis für Board,
+          Ticket-Modal und Dashboard genutzt werden.
         </p>
 
         <div className="next-steps">
           <article className="step-card">
-            <h2>Naechster Schritt</h2>
-            <p>App-Layout mit Navigation fuer Board und Dashboard aufbauen.</p>
+            <h2>Nächster Schritt</h2>
+            <p>App-Layout mit Navigation für Board und Dashboard aufbauen.</p>
           </article>
           <article className="step-card">
             <h2>Ordnerstruktur</h2>
@@ -20,7 +20,7 @@ export default function App() {
           </article>
           <article className="step-card">
             <h2>Start</h2>
-            <p>`npm.cmd install` und danach `npm.cmd run dev` im `frontend`-Ordner ausfuehren.</p>
+            <p>`npm.cmd install` und danach `npm.cmd run dev` im `frontend`-Ordner ausführen.</p>
           </article>
         </div>
       </section>

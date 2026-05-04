@@ -1,3 +1,3 @@
 ﻿# Dokumentation
 
-Hier koennen spaeter Architekturentscheidungen, API-Notizen und Abnahme-Checklisten abgelegt werden.
+Hier können später Architekturentscheidungen, API-Notizen und Abnahme-Checklisten abgelegt werden.
