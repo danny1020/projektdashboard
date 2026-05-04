@@ -47,7 +47,11 @@ cd backend
 ```
 
 ### Frontend
-Wird spaeter mit React + Vite angelegt.
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
 
 ## Git-Workflow
 - Default-Branch: `main`

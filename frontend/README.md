@@ -1,8 +1,19 @@
-﻿# Frontend-Struktur
+# Frontend
 
-Dieser Ordner ist fuer das spaetere React-Frontend vorbereitet.
+React-Frontend fuer das Projektdashboard.
 
-## Geplante Struktur
+## Start
+```powershell
+npm.cmd install
+npm.cmd run dev
+```
+
+## Build
+```powershell
+npm.cmd run build
+```
+
+## Struktur
 - `src/components`
 - `src/pages`
 - `src/services`
