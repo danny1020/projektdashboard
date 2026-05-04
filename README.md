@@ -1,6 +1,6 @@
 ﻿# Projektdashboard
 
-Monorepo fuer das Uni-Projekt an der FOM.
+Monorepo für das Uni-Projekt an der FOM.
 
 ## Tech-Stack
 - Frontend: React + Vite
@@ -58,4 +58,3 @@ npm.cmd run dev
 - Keine direkten Pushes auf `main`
 - Arbeit in Feature-Branches, z. B. `feature/repository-setup`
 - Merge nur per Pull Request
-

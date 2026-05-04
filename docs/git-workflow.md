@@ -21,5 +21,5 @@
 ## Mini-PR-Checkliste
 - Projekt baut lokal
 - Keine versehentlichen IDE-Dateien im Commit
-- README/Doku angepasst, wenn noetig
+- README/Doku angepasst, wenn nötig
 - Ticket bzw. Aufgabe im PR kurz beschrieben
