@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: projektdashboard-backend
+  profiles:
+    active: prod
+  datasource:
+    host: "5.83.145.47"
+    port: "3306"
+    database: "FOM_Project"
+    username: "fom_admin"
+    password: "mrv4PXuTS74m%jg^!"
+
