@@ -1,6 +1,7 @@
 package de.fom.projektdashboard.controller;
 
 import de.fom.projektdashboard.dto.TicketPatchRequest;
+import de.fom.projektdashboard.dto.TicketMoveRequest;
 import de.fom.projektdashboard.dto.TicketRequest;
 import de.fom.projektdashboard.dto.TicketResponse;
 import de.fom.projektdashboard.model.board.Board;
@@ -14,11 +15,14 @@ import de.fom.projektdashboard.repository.TicketRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -41,11 +45,11 @@ public class TicketController {
         List<Ticket> tickets;
 
         if (boardId != null) {
-            var membership = boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName());
+            Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName());
             if (membership.isEmpty()) {
                 return forbidden("Du hast keinen Zugriff auf dieses Board.");
             }
-            tickets = ticketRepository.findByBoardIdOrderByCreatedAtDesc(boardId);
+            tickets = ticketRepository.findByBoardIdOrderByStatusAscOrderIndexAscCreatedAtAsc(boardId);
         } else {
             List<Long> boardIds = boardMemberRepository.findByUserUsername(principal.getName()).stream()
                 .map(BoardMember::getBoard)
@@ -54,7 +58,7 @@ public class TicketController {
 
             tickets = boardIds.isEmpty()
                 ? List.of()
-                : ticketRepository.findByBoardIdInOrderByCreatedAtDesc(boardIds);
+                : ticketRepository.findByBoardIdInOrderByBoardIdAscStatusAscOrderIndexAscCreatedAtAsc(boardIds);
         }
 
         return ResponseEntity.ok(tickets.stream().map(TicketResponse::from).toList());
@@ -62,13 +66,14 @@ public class TicketController {
 
     // Erstellt ein neues Ticket in einem Board, wenn der User dort Schreibrechte hat.
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createTicket(@Valid @RequestBody TicketRequest request, Principal principal) {
         Board board = boardRepository.findById(request.getBoardId()).orElse(null);
         if (board == null) {
             return notFound("Board wurde nicht gefunden.");
         }
 
-        var membership = boardMemberRepository.findByBoardIdAndUserUsername(board.getId(), principal.getName());
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(board.getId(), principal.getName());
         if (membership.isEmpty()) {
             return forbidden("Du hast keinen Zugriff auf dieses Board.");
         }
@@ -81,21 +86,28 @@ public class TicketController {
         ticket.setTitle(request.getTitle().trim());
         ticket.setDescription(normalizeText(request.getDescription()));
         ticket.setStatus(request.getStatus() == null ? TicketStatus.TODO : request.getStatus());
+        ticket.setOrderIndex(0);
 
         Ticket savedTicket = ticketRepository.save(ticket);
+        int targetOrderIndex = request.getOrderIndex() == null
+            ? ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(board.getId(), savedTicket.getStatus()).size() - 1
+            : request.getOrderIndex().intValue();
+        moveTicketTo(savedTicket, savedTicket.getStatus(), targetOrderIndex);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(TicketResponse.from(savedTicket));
     }
 
     // Bearbeitet einzelne Ticket-Felder, wenn der User Zugriff und Schreibrechte auf das Board hat.
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateTicket(@PathVariable Long id, @RequestBody TicketPatchRequest request,
+    @Transactional
+    public ResponseEntity<?> updateTicket(@PathVariable Long id, @Valid @RequestBody TicketPatchRequest request,
                                           Principal principal) {
         Ticket ticket = ticketRepository.findById(id).orElse(null);
         if (ticket == null) {
             return notFound("Ticket wurde nicht gefunden.");
         }
 
-        var membership = boardMemberRepository.findByBoardIdAndUserUsername(ticket.getBoard().getId(), principal.getName());
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(ticket.getBoard().getId(), principal.getName());
         if (membership.isEmpty()) {
             return forbidden("Du hast keinen Zugriff auf dieses Ticket.");
         }
@@ -119,8 +131,10 @@ public class TicketController {
             changed = true;
         }
 
-        if (request.getStatus() != null) {
-            ticket.setStatus(request.getStatus());
+        if (request.getStatus() != null || request.getOrderIndex() != null) {
+            TicketStatus targetStatus = request.getStatus() == null ? ticket.getStatus() : request.getStatus();
+            int targetOrderIndex = request.getOrderIndex() == null ? currentOrderIndex(ticket) : request.getOrderIndex().intValue();
+            moveTicketTo(ticket, targetStatus, targetOrderIndex);
             changed = true;
         }
 
@@ -132,9 +146,74 @@ public class TicketController {
         return ResponseEntity.ok(TicketResponse.from(savedTicket));
     }
 
+    // Verschiebt ein Ticket in eine Statusspalte und speichert die neue Reihenfolge.
+    @PatchMapping("/{id}/move")
+    @Transactional
+    public ResponseEntity<?> moveTicket(@PathVariable Long id, @Valid @RequestBody TicketMoveRequest request,
+                                        Principal principal) {
+        Ticket ticket = ticketRepository.findById(id).orElse(null);
+        if (ticket == null) {
+            return notFound("Ticket wurde nicht gefunden.");
+        }
+
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(ticket.getBoard().getId(), principal.getName());
+        if (membership.isEmpty()) {
+            return forbidden("Du hast keinen Zugriff auf dieses Ticket.");
+        }
+        if (!canWriteTickets(membership.get().getRole())) {
+            return forbidden("Du darfst dieses Ticket nicht verschieben.");
+        }
+
+        moveTicketTo(ticket, request.getStatus(), request.getOrderIndex().intValue());
+        return ResponseEntity.ok(TicketResponse.from(ticket));
+    }
+
     // Prüft, ob eine Board-Rolle Tickets erstellen und bearbeiten darf.
     private boolean canWriteTickets(BoardRole role) {
         return role == BoardRole.OWNER || role == BoardRole.ADMIN || role == BoardRole.MITARBEITER;
+    }
+
+    // Nutzt 0 als Fallback, falls alte Datenbankzeilen noch keinen orderIndex haben.
+    private int currentOrderIndex(Ticket ticket) {
+        return ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex();
+    }
+
+    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu.
+    private void moveTicketTo(Ticket ticket, TicketStatus targetStatus, int targetOrderIndex) {
+        Long boardId = ticket.getBoard().getId();
+        TicketStatus oldStatus = ticket.getStatus();
+
+        if (oldStatus != targetStatus) {
+            reindexColumnWithoutTicket(boardId, oldStatus, ticket.getId());
+        }
+
+        List<Ticket> targetTickets = new ArrayList<>(
+            ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, targetStatus)
+        );
+        targetTickets.removeIf(existingTicket -> existingTicket.getId().equals(ticket.getId()));
+
+        int safeOrderIndex = Math.min(targetOrderIndex, targetTickets.size());
+        ticket.setStatus(targetStatus);
+        targetTickets.add(safeOrderIndex, ticket);
+
+        reindexTickets(targetTickets);
+    }
+
+    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat.
+    private void reindexColumnWithoutTicket(Long boardId, TicketStatus status, Long ticketId) {
+        List<Ticket> tickets = new ArrayList<>(
+            ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status)
+        );
+        tickets.removeIf(ticket -> ticket.getId().equals(ticketId));
+        reindexTickets(tickets);
+    }
+
+    // Vergibt fortlaufende orderIndex-Werte und speichert die neue Reihenfolge.
+    private void reindexTickets(List<Ticket> tickets) {
+        for (int i = 0; i < tickets.size(); i++) {
+            tickets.get(i).setOrderIndex(i);
+        }
+        ticketRepository.saveAll(tickets);
     }
 
     // Räumt optionale Textfelder auf und speichert leere Strings als null.

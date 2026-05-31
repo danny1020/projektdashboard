@@ -16,6 +16,7 @@ public class TicketResponse {
     private String title;
     private String description;
     private TicketStatus status;
+    private Integer orderIndex;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -28,6 +29,7 @@ public class TicketResponse {
             ticket.getTitle(),
             ticket.getDescription(),
             ticket.getStatus(),
+            ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex(),
             ticket.getCreatedAt(),
             ticket.getUpdatedAt()
         );

@@ -26,6 +26,9 @@ public class Ticket {
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.TODO;
 
+    @Column(nullable = false)
+    private Integer orderIndex = 0;
+
     @ManyToOne
     @JoinColumn(name = "board_id", nullable = false)
     private Board board;
