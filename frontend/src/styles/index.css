@@ -368,26 +368,10 @@ body {
   margin: 20px 0;
 }
 
-.ticket-card select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #fff;
-  color-scheme: dark;
-  padding: 10px 12px;
-  font-size: 0.95rem;
-}
-
-.ticket-card option,
 .input-group option,
 .member-row option {
   background: #110e1c;
   color: #fff;
-}
-
-.ticket-card select:focus {
-  outline: none;
-  border-color: #7c3aed;
 }
 
 .empty-state {
@@ -405,10 +389,17 @@ body {
 
 .ticket-column {
   min-width: 0;
+  min-height: 320px;
   background: rgba(0,0,0,0.2);
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 12px;
   padding: 15px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.ticket-column.drop-active {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(167, 139, 250, 0.55);
 }
 
 .ticket-column-header {
@@ -437,11 +428,13 @@ body {
 }
 
 .ticket-card {
+  position: relative;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.03);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
+  user-select: none;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -451,6 +444,31 @@ body {
   background: rgba(255,255,255,0.05);
   border-color: rgba(167, 139, 250, 0.35);
   outline: none;
+}
+
+.ticket-card.dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.ticket-card.drop-before::before,
+.ticket-card.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: #a78bfa;
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.65);
+}
+
+.ticket-card.drop-before::before {
+  top: -6px;
+}
+
+.ticket-card.drop-after::after {
+  bottom: -6px;
 }
 
 .ticket-card strong {
@@ -470,34 +488,6 @@ body {
   margin: 12px 0;
   color: #cbd5e1;
   font-size: 0.82rem;
-}
-
-.ticket-card select {
-  width: 100%;
-}
-
-.ticket-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 12px 0;
-}
-
-.ticket-card-actions button {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
-  border-radius: 6px;
-  padding: 6px 8px;
-  cursor: pointer;
-  font-size: 0.78rem;
-}
-
-.ticket-card-actions button:disabled {
-  color: #6b7280;
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .ticket-card.done {

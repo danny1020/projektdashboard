@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import AppLayout from './AppLayout';
 import { createTicket, loadBoardMembers, loadTickets, moveTicket, updateTicket } from '../services/ticketApi';
@@ -38,9 +38,14 @@ export default function BoardDetail() {
   const [ticketModalMode, setTicketModalMode] = useState('create');
   const [activeTicket, setActiveTicket] = useState(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [draggedTicketId, setDraggedTicketId] = useState(null);
+  const [activeDropStatus, setActiveDropStatus] = useState('');
+  const [dropTarget, setDropTarget] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const draggedTicketRef = useRef(null);
+  const ignoreNextTicketClickRef = useRef(false);
 
   useEffect(() => {
     localStorage.setItem('lastBoardId', id);
@@ -161,17 +166,94 @@ export default function BoardDetail() {
     }
   };
 
-  const handleStatusChange = (ticket, status) => {
-    const orderIndex = getTicketsByStatus(status).length;
-    handleMoveTicket(ticket, status, orderIndex);
+  const handleTicketDragStart = (event, ticket) => {
+    if (isSaving) return;
+
+    draggedTicketRef.current = ticket;
+    ignoreNextTicketClickRef.current = true;
+    setDraggedTicketId(ticket.id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(ticket.id));
   };
 
-  const moveWithinColumn = (status, index, direction) => {
-    const columnTickets = getTicketsByStatus(status);
-    const targetIndex = index + direction;
+  const handleTicketDragEnd = () => {
+    draggedTicketRef.current = null;
+    setDraggedTicketId(null);
+    setActiveDropStatus('');
+    setDropTarget(null);
 
-    if (targetIndex < 0 || targetIndex >= columnTickets.length) return;
-    handleMoveTicket(columnTickets[index], status, targetIndex);
+    window.setTimeout(() => {
+      ignoreNextTicketClickRef.current = false;
+    }, 150);
+  };
+
+  const handleColumnDragOver = (event, status) => {
+    if (!draggedTicketRef.current || isSaving) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setActiveDropStatus(status);
+
+    if (!event.target.closest?.('.ticket-card')) {
+      setDropTarget(null);
+    }
+  };
+
+  const handleColumnDragLeave = (event, status) => {
+    if (activeDropStatus === status && !event.currentTarget.contains(event.relatedTarget)) {
+      setActiveDropStatus('');
+    }
+  };
+
+  const handleColumnDrop = (event, status) => {
+    event.preventDefault();
+
+    const draggedTicket = draggedTicketRef.current
+      || tickets.find((ticket) => String(ticket.id) === event.dataTransfer.getData('text/plain'));
+
+    draggedTicketRef.current = null;
+    setDraggedTicketId(null);
+    setActiveDropStatus('');
+    setDropTarget(null);
+
+    window.setTimeout(() => {
+      ignoreNextTicketClickRef.current = false;
+    }, 150);
+
+    if (!draggedTicket || isSaving) return;
+
+    const targetOrderIndex = calculateDropOrderIndex(status, draggedTicket.id);
+    if (draggedTicket.status === status && (draggedTicket.orderIndex ?? 0) === targetOrderIndex) return;
+
+    handleMoveTicket(draggedTicket, status, targetOrderIndex);
+  };
+
+  const handleTicketDragOver = (event, status, ticket) => {
+    if (!draggedTicketRef.current || isSaving || draggedTicketRef.current.id === ticket.id) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+
+    const cardBounds = event.currentTarget.getBoundingClientRect();
+    const position = event.clientY < cardBounds.top + cardBounds.height / 2 ? 'before' : 'after';
+    setActiveDropStatus(status);
+    setDropTarget({ ticketId: ticket.id, status, position });
+  };
+
+  const calculateDropOrderIndex = (status, draggedTicketIdValue) => {
+    const targetTickets = getTicketsByStatus(status)
+      .filter((ticket) => ticket.id !== draggedTicketIdValue);
+
+    if (!dropTarget || dropTarget.status !== status) {
+      return targetTickets.length;
+    }
+
+    const targetTicketIndex = targetTickets.findIndex((ticket) => ticket.id === dropTarget.ticketId);
+    if (targetTicketIndex === -1) {
+      return targetTickets.length;
+    }
+
+    return dropTarget.position === 'after' ? targetTicketIndex + 1 : targetTicketIndex;
   };
 
   const handleTicketCardKeyDown = (event, ticket) => {
@@ -179,6 +261,11 @@ export default function BoardDetail() {
       event.preventDefault();
       openEditModal(ticket);
     }
+  };
+
+  const handleTicketCardClick = (ticket) => {
+    if (ignoreNextTicketClickRef.current) return;
+    openEditModal(ticket);
   };
 
   return (
@@ -210,7 +297,13 @@ export default function BoardDetail() {
                 const columnTickets = getTicketsByStatus(status.value);
 
                 return (
-                  <section className="ticket-column" key={status.value}>
+                  <section
+                    className={activeDropStatus === status.value ? 'ticket-column drop-active' : 'ticket-column'}
+                    key={status.value}
+                    onDragOver={(event) => handleColumnDragOver(event, status.value)}
+                    onDragLeave={(event) => handleColumnDragLeave(event, status.value)}
+                    onDrop={(event) => handleColumnDrop(event, status.value)}
+                  >
                     <div className="ticket-column-header">
                       <h4>{status.label}</h4>
                       <span>{columnTickets.length}</span>
@@ -220,14 +313,23 @@ export default function BoardDetail() {
                       <div className="empty-state">Keine Tickets</div>
                     )}
 
-                    {columnTickets.map((ticket, index) => (
+                    {columnTickets.map((ticket) => (
                       <div
-                        className={ticket.status === 'DONE' ? 'ticket-card done' : 'ticket-card'}
+                        className={[
+                          ticket.status === 'DONE' ? 'ticket-card done' : 'ticket-card',
+                          draggedTicketId === ticket.id ? 'dragging' : '',
+                          dropTarget?.ticketId === ticket.id && dropTarget.position === 'before' ? 'drop-before' : '',
+                          dropTarget?.ticketId === ticket.id && dropTarget.position === 'after' ? 'drop-after' : ''
+                        ].filter(Boolean).join(' ')}
                         key={ticket.id}
                         role="button"
                         tabIndex={0}
-                        onClick={() => openEditModal(ticket)}
+                        draggable={!isSaving}
+                        onClick={() => handleTicketCardClick(ticket)}
                         onKeyDown={(event) => handleTicketCardKeyDown(event, ticket)}
+                        onDragStart={(event) => handleTicketDragStart(event, ticket)}
+                        onDragOver={(event) => handleTicketDragOver(event, status.value, ticket)}
+                        onDragEnd={handleTicketDragEnd}
                       >
                         <strong>{ticket.title}</strong>
                         {ticket.description && <p>{ticket.description}</p>}
@@ -237,26 +339,6 @@ export default function BoardDetail() {
                           <span>Typ: {ticket.type || 'Aufgabe'}</span>
                           <span>Bearbeiter: {getTicketAssigneeLabel(ticket)}</span>
                         </div>
-
-                        <div className="ticket-card-actions" onClick={(event) => event.stopPropagation()}>
-                          <button type="button" onClick={() => moveWithinColumn(status.value, index, -1)} disabled={isSaving || index === 0}>
-                            Hoch
-                          </button>
-                          <button type="button" onClick={() => moveWithinColumn(status.value, index, 1)} disabled={isSaving || index === columnTickets.length - 1}>
-                            Runter
-                          </button>
-                        </div>
-
-                        <select
-                          value={ticket.status}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={(e) => handleStatusChange(ticket, e.target.value)}
-                          disabled={isSaving}
-                        >
-                          {TICKET_STATUSES.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
                       </div>
                     ))}
                   </section>

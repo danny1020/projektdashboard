@@ -19,7 +19,7 @@ export default function Register() {
         alert('Registrierung erfolgreich! Du wirst zum Login weitergeleitet.');
         navigate('/login');
       } else {
-        alert(`Registrierung fehlgeschlagen: ${await res.text()}`);
+        alert('Registrierung fehlgeschlagen. Username eventuell schon vergeben.');
       }
     } catch (err) {
       alert('Verbindung zum Server fehlgeschlagen.');
