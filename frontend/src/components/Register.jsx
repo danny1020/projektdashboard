@@ -12,7 +12,7 @@ export default function Register() {
       const res = await fetch('http://localhost:8080/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, confirmPassword: password })
       });
 
       if (res.ok) {
