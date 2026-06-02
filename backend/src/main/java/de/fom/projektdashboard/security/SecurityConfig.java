@@ -3,6 +3,7 @@ package de.fom.projektdashboard.security;
 import de.fom.projektdashboard.config.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,14 +29,15 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 var config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:5173"));
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+                config.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
                 config.setAllowedHeaders(List.of("*"));
                 return config;
             }))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .anyRequest().authenticated()
             )
