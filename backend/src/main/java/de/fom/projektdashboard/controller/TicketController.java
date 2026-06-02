@@ -85,6 +85,16 @@ public class TicketController {
         ticket.setBoard(board);
         ticket.setTitle(request.getTitle().trim());
         ticket.setDescription(normalizeText(request.getDescription()));
+        ticket.setType(normalizeTicketType(request.getType()));
+        ticket.setPriority(normalizeText(request.getPriority()));
+        String assigneeUsername = normalizeText(request.getAssigneeUsername());
+        if (assigneeUsername != null) {
+            Optional<BoardMember> assignee = boardMemberRepository.findByBoardIdAndUserUsername(board.getId(), assigneeUsername);
+            if (assignee.isEmpty()) {
+                return badRequest("Zugewiesener User ist kein Mitglied dieses Boards.");
+            }
+            ticket.setAssigneeUsername(assignee.get().getUser().getUsername());
+        }
         ticket.setStatus(request.getStatus() == null ? TicketStatus.TODO : request.getStatus());
         ticket.setOrderIndex(0);
 
@@ -128,6 +138,30 @@ public class TicketController {
 
         if (request.getDescription() != null) {
             ticket.setDescription(normalizeText(request.getDescription()));
+            changed = true;
+        }
+
+        if (request.getType() != null) {
+            ticket.setType(normalizeTicketType(request.getType()));
+            changed = true;
+        }
+
+        if (request.getPriority() != null) {
+            ticket.setPriority(normalizeText(request.getPriority()));
+            changed = true;
+        }
+
+        if (request.getAssigneeUsername() != null) {
+            String assigneeUsername = normalizeText(request.getAssigneeUsername());
+            if (assigneeUsername == null) {
+                ticket.setAssigneeUsername(null);
+            } else {
+                Optional<BoardMember> assignee = boardMemberRepository.findByBoardIdAndUserUsername(ticket.getBoard().getId(), assigneeUsername);
+                if (assignee.isEmpty()) {
+                    return badRequest("Zugewiesener User ist kein Mitglied dieses Boards.");
+                }
+                ticket.setAssigneeUsername(assignee.get().getUser().getUsername());
+            }
             changed = true;
         }
 
@@ -223,6 +257,12 @@ public class TicketController {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    // Setzt Aufgabe als Standard, wenn im Formular kein Typ ausgewählt wurde.
+    private String normalizeTicketType(String value) {
+        String normalized = normalizeText(value);
+        return normalized == null ? "Aufgabe" : normalized;
     }
 
     // Baut eine einheitliche 400-Fehlerantwort.

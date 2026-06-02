@@ -15,6 +15,9 @@ public class TicketResponse {
     private String boardTitle;
     private String title;
     private String description;
+    private String type;
+    private String priority;
+    private String assigneeUsername;
     private TicketStatus status;
     private Integer orderIndex;
     private LocalDateTime createdAt;
@@ -28,6 +31,9 @@ public class TicketResponse {
             ticket.getBoard().getTitle(),
             ticket.getTitle(),
             ticket.getDescription(),
+            ticket.getType(),
+            ticket.getPriority(),
+            ticket.getAssigneeUsername(),
             ticket.getStatus(),
             ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex(),
             ticket.getCreatedAt(),

@@ -22,6 +22,14 @@ public class Ticket {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "ticket_type")
+    private String type = "Aufgabe";
+
+    private String priority;
+
+    @Column(name = "assignee_username")
+    private String assigneeUsername;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TicketStatus status = TicketStatus.TODO;
@@ -44,6 +52,9 @@ public class Ticket {
     void onCreate() {
         if (status == null) {
             status = TicketStatus.TODO;
+        }
+        if (type == null || type.isBlank()) {
+            type = "Aufgabe";
         }
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;

@@ -16,6 +16,10 @@ public class TicketRequest {
 
     private String description;
 
+    private String type;
+    private String priority;
+    private String assigneeUsername;
+
     private TicketStatus status;
 
     @Min(value = 0, message = "orderIndex darf nicht negativ sein")
