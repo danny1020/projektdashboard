@@ -1,7 +1,6 @@
 package de.fom.projektdashboard.dto;
 
 import de.fom.projektdashboard.model.ticket.Ticket;
-import de.fom.projektdashboard.model.ticket.TicketStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -18,7 +17,7 @@ public class TicketResponse {
     private String type;
     private String priority;
     private String assigneeUsername;
-    private TicketStatus status;
+    private String status;
     private Integer orderIndex;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

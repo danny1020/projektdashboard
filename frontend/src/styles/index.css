@@ -771,3 +771,35 @@ body {
   color: #c084fc;
   text-decoration: underline;
 }
+
+/* Erlaube horizontales Scrollen im Kanban Board bei vielen Spalten */
+.board-detail-page {
+  margin: 100px auto 40px auto;
+  padding: 0 40px;
+  max-width: 100%; /* Erweitert auf volle Breite */
+  box-sizing: border-box;
+}
+
+.ticket-columns {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+  overflow-x: auto; /* Aktiviert horizontales Scrollen bei Übergröße */
+  padding-bottom: 15px;
+}
+
+/* Schickere Scrollbars für das Board */
+.ticket-columns::-webkit-scrollbar {
+  height: 8px;
+}
+.ticket-columns::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.ticket-columns::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+}
+.ticket-columns::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}

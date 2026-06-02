@@ -30,9 +30,8 @@ public class Ticket {
     @Column(name = "assignee_username")
     private String assigneeUsername;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TicketStatus status = TicketStatus.TODO;
+    private String status = "TODO";
 
     @Column(nullable = false)
     private Integer orderIndex = 0;
@@ -51,7 +50,7 @@ public class Ticket {
     @PrePersist
     void onCreate() {
         if (status == null) {
-            status = TicketStatus.TODO;
+            status = "TODO";
         }
         if (type == null || type.isBlank()) {
             type = "Aufgabe";

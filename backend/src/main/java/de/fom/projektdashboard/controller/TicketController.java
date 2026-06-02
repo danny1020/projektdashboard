@@ -8,7 +8,6 @@ import de.fom.projektdashboard.model.board.Board;
 import de.fom.projektdashboard.model.board.BoardMember;
 import de.fom.projektdashboard.model.board.BoardRole;
 import de.fom.projektdashboard.model.ticket.Ticket;
-import de.fom.projektdashboard.model.ticket.TicketStatus;
 import de.fom.projektdashboard.repository.BoardMemberRepository;
 import de.fom.projektdashboard.repository.BoardRepository;
 import de.fom.projektdashboard.repository.TicketRepository;
@@ -95,7 +94,9 @@ public class TicketController {
             }
             ticket.setAssigneeUsername(assignee.get().getUser().getUsername());
         }
-        ticket.setStatus(request.getStatus() == null ? TicketStatus.TODO : request.getStatus());
+
+        // Flexibler String-FallBack statt Enum
+        ticket.setStatus(request.getStatus() == null ? "TODO" : request.getStatus());
         ticket.setOrderIndex(0);
 
         Ticket savedTicket = ticketRepository.save(ticket);
@@ -166,7 +167,7 @@ public class TicketController {
         }
 
         if (request.getStatus() != null || request.getOrderIndex() != null) {
-            TicketStatus targetStatus = request.getStatus() == null ? ticket.getStatus() : request.getStatus();
+            String targetStatus = request.getStatus() == null ? ticket.getStatus() : request.getStatus();
             int targetOrderIndex = request.getOrderIndex() == null ? currentOrderIndex(ticket) : request.getOrderIndex().intValue();
             moveTicketTo(ticket, targetStatus, targetOrderIndex);
             changed = true;
@@ -202,6 +203,44 @@ public class TicketController {
         return ResponseEntity.ok(TicketResponse.from(ticket));
     }
 
+    // Löscht eine Statusspalte für ein Board und verschiebt verbliebene Tickets nach "TODO"
+    @DeleteMapping("/columns")
+    @Transactional
+    public ResponseEntity<?> deleteColumn(@RequestParam Long boardId, @RequestParam String status, Principal principal) {
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName());
+        if (membership.isEmpty()) {
+            return forbidden("Du hast keinen Zugriff auf dieses Board.");
+        }
+        if (!canWriteTickets(membership.get().getRole())) {
+            return forbidden("Du darfst in diesem Board keine Spalten löschen.");
+        }
+
+        // Sicherheitscheck: Die Standardspalte "TODO" sollte nicht gelöscht werden
+        if ("TODO".equalsIgnoreCase(status)) {
+            return badRequest("Die Standard-Spalte 'TODO' kann nicht gelöscht werden.");
+        }
+
+        // Alle Tickets aus der zu löschenden Spalte holen
+        List<Ticket> ticketsInColumn = ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status);
+
+        if (!ticketsInColumn.isEmpty()) {
+            // Option: Verschiebe alle Tickets in die "TODO"-Spalte
+            List<Ticket> todoTickets = new ArrayList<>(
+                ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, "TODO")
+            );
+
+            for (Ticket ticket : ticketsInColumn) {
+                ticket.setStatus("TODO");
+                todoTickets.add(ticket);
+            }
+
+            // Indizes für die TODO-Spalte neu aufbauen und alles speichern
+            reindexTickets(todoTickets);
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Spalte erfolgreich gelöscht und Tickets verschoben."));
+    }
+
     // Prüft, ob eine Board-Rolle Tickets erstellen und bearbeiten darf.
     private boolean canWriteTickets(BoardRole role) {
         return role == BoardRole.OWNER || role == BoardRole.ADMIN || role == BoardRole.MITARBEITER;
@@ -212,12 +251,12 @@ public class TicketController {
         return ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex();
     }
 
-    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu.
-    private void moveTicketTo(Ticket ticket, TicketStatus targetStatus, int targetOrderIndex) {
+    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu. (Auf String angepasst)
+    private void moveTicketTo(Ticket ticket, String targetStatus, int targetOrderIndex) {
         Long boardId = ticket.getBoard().getId();
-        TicketStatus oldStatus = ticket.getStatus();
+        String oldStatus = ticket.getStatus();
 
-        if (oldStatus != targetStatus) {
+        if (!oldStatus.equals(targetStatus)) {
             reindexColumnWithoutTicket(boardId, oldStatus, ticket.getId());
         }
 
@@ -233,8 +272,8 @@ public class TicketController {
         reindexTickets(targetTickets);
     }
 
-    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat.
-    private void reindexColumnWithoutTicket(Long boardId, TicketStatus status, Long ticketId) {
+    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat. (Auf String angepasst)
+    private void reindexColumnWithoutTicket(Long boardId, String status, Long ticketId) {
         List<Ticket> tickets = new ArrayList<>(
             ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status)
         );

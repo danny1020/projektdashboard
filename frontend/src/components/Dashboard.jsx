@@ -173,8 +173,8 @@ export default function Dashboard() {
 
   const iAmAllowedToEditMembers = () => {
     if (!activeBoard) return false;
-    if (activeBoard.owner.username === currentUser) return true;
-    const membership = boardMembers.find((member) => member.user.username === currentUser);
+    if (activeBoard.owner?.username === currentUser) return true;
+    const membership = boardMembers.find((member) => member.user?.username === currentUser);
     return membership && (membership.role === 'OWNER' || membership.role === 'ADMIN');
   };
 
@@ -194,7 +194,7 @@ export default function Dashboard() {
               invitations.map((invitation) => (
                 <div key={invitation.id} className="dropdown-item">
                   <p style={{ fontSize: '0.85rem', margin: 0, color: '#cbd5e1' }}>
-                    Von {invitation.board.owner.username}: <b>{invitation.board.title}</b>
+                    Von {invitation.board?.owner?.username || 'System'}: <b>{invitation.board?.title}</b>
                   </p>
                   <button className="small-action-btn" onClick={() => acceptInvite(invitation.id)}>
                     Annehmen
@@ -215,7 +215,7 @@ export default function Dashboard() {
     <AppLayout currentUser={currentUser} actions={dashboardActions}>
       <div className="board-grid">
         {boards.map((board) => {
-          const isOwner = board.owner.username === currentUser;
+          const isOwner = board.owner?.username === currentUser;
 
           return (
             <div key={board.id} className="board-card">
@@ -223,7 +223,7 @@ export default function Dashboard() {
               <h3>{board.title}</h3>
               <p>{board.description}</p>
               <div style={{ fontSize: '0.8rem', color: '#6366f1', marginBottom: '15px', fontWeight: '500' }}>
-                Owner: {board.owner.username}
+                Owner: {board.owner?.username || 'Unbekannt'}
               </div>
 
               <div className="card-actions">
@@ -273,20 +273,25 @@ export default function Dashboard() {
             )}
 
             <div style={{ maxHeight: '220px', overflowY: 'auto', marginBottom: '10px' }}>
-              {boardMembers.map((member) => (
-                <div key={member.id} className="member-row">
-                  <span>{member.user.username === activeBoard?.owner.username ? 'Owner' : member.user.username}</span>
-                  {member.role === 'OWNER' ? (
-                    <span className="owner-label">Owner</span>
-                  ) : (
-                    <select value={member.role} disabled={!iAmAllowedToEditMembers()} onChange={(e) => changeRole(member.id, e.target.value)}>
-                      <option value="ADMIN">Admin</option>
-                      <option value="MITARBEITER">Mitarbeiter</option>
-                      <option value="BEOBACHTER">Beobachter</option>
-                    </select>
-                  )}
-                </div>
-              ))}
+              {boardMembers.map((member) => {
+                const memberName = member.user?.username || member.username || 'Unbekannter User';
+                const isOwnerRole = member.role === 'OWNER' || (activeBoard?.owner?.username && memberName === activeBoard.owner.username);
+
+                return (
+                  <div key={member.id} className="member-row">
+                    <span>{isOwnerRole ? `${memberName} (Owner)` : memberName}</span>
+                    {isOwnerRole ? (
+                      <span className="owner-label">Owner</span>
+                    ) : (
+                      <select value={member.role} disabled={!iAmAllowedToEditMembers()} onChange={(e) => changeRole(member.id, e.target.value)}>
+                        <option value="ADMIN">Admin</option>
+                        <option value="MITARBEITER">Mitarbeiter</option>
+                        <option value="BEOBACHTER">Beobachter</option>
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <button type="button" onClick={() => setShowMemberModal(false)} className="btn-primary">Schließen</button>
