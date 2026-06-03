@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 const getCurrentUser = () => {
   const token = localStorage.getItem('token');
@@ -17,8 +18,6 @@ const getCurrentUser = () => {
 export default function AppLayout({ children, actions, currentUser }) {
   const navigate = useNavigate();
   const username = currentUser || getCurrentUser();
-  const lastBoardId = localStorage.getItem('lastBoardId');
-  const boardPath = lastBoardId ? `/board/${lastBoardId}` : '/dashboard';
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -40,6 +39,7 @@ export default function AppLayout({ children, actions, currentUser }) {
 
         <div className="nav-actions">
           {actions}
+          <ThemeToggle />
           <button className="user-profile-btn" onClick={handleLogout}>
             {username || 'Profil'} | Abmelden
           </button>

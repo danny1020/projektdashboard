@@ -489,7 +489,7 @@ export default function BoardDetail() {
         <div className="board-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h1>{boardTitle}</h1>
-            <p style={{ color: '#9ca3af', margin: 0 }}>Klicke auf Spaltennamen zum Umbenennen. Änderungen fließen direkt in die DB.</p>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Klicke auf Spaltennamen zum Umbenennen. Änderungen fließen direkt in die DB.</p>
           </div>
           <div className="board-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
 
@@ -498,9 +498,9 @@ export default function BoardDetail() {
               className="icon-btn"
               onClick={() => navigate(`/dashboard/${id}`)}
               style={{
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                border: '1px solid #6366f1',
-                color: '#6366f1',
+                backgroundColor: 'var(--primary-soft)',
+                border: '1px solid var(--primary)',
+                color: 'var(--primary)',
                 borderRadius: '6px',
                 padding: '8px 14px',
                 fontSize: '0.875rem',
@@ -509,12 +509,12 @@ export default function BoardDetail() {
                 transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#6366f1';
-                e.target.style.color = '#ffffff';
+                e.target.style.backgroundColor = 'var(--primary)';
+                e.target.style.color = 'var(--text-strong)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
-                e.target.style.color = '#6366f1';
+                e.target.style.backgroundColor = 'var(--primary-soft)';
+                e.target.style.color = 'var(--primary)';
               }}
             >
               📈 Board Analyse anzeigen
@@ -565,11 +565,11 @@ export default function BoardDetail() {
                   onDrop={(event) => handleColumnDrop(event, status.value)}
                   style={{
                     opacity: isColumnDragging ? 0.4 : 1,
-                    border: isColumnDropTarget ? '2px dashed #6366f1' : 'none',
-                    backgroundColor: '#1e293b',
+                    border: isColumnDropTarget ? '2px dashed var(--primary)' : 'none',
+                    backgroundColor: 'var(--surface-elevated)',
                     borderRadius: '12px',
                     padding: '16px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    boxShadow: 'var(--shadow)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -589,14 +589,14 @@ export default function BoardDetail() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                      backgroundColor: 'var(--surface-soft)',
                       padding: '10px 12px',
                       borderRadius: '8px',
-                      borderBottom: '2px solid rgba(255, 255, 255, 0.05)'
+                      borderBottom: '2px solid var(--border-soft)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-                      <span style={{ color: '#64748b', fontSize: '1.1rem', cursor: 'grab', userSelect: 'none' }} title="Spalte verschieben">⋮⋮</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'grab', userSelect: 'none' }} title="Spalte verschieben">⋮⋮</span>
 
                       {isEditing ? (
                         <input
@@ -611,10 +611,10 @@ export default function BoardDetail() {
                           autoFocus
                           disabled={isSaving}
                           style={{
-                            background: '#0f172a',
-                            border: '1px solid #6366f1',
+                            background: 'var(--surface-deep)',
+                            border: '1px solid var(--primary)',
                             borderRadius: '4px',
-                            color: '#f8fafc',
+                            color: 'var(--text-strong)',
                             fontSize: '0.95rem',
                             fontWeight: '600',
                             padding: '2px 6px',
@@ -634,7 +634,7 @@ export default function BoardDetail() {
                             margin: 0,
                             fontSize: '0.95rem',
                             fontWeight: '600',
-                            color: '#f8fafc',
+                            color: 'var(--text-strong)',
                             letterSpacing: '0.5px',
                             cursor: isSaving ? 'not-allowed' : 'pointer',
                             overflow: 'hidden',
@@ -649,8 +649,8 @@ export default function BoardDetail() {
                       )}
 
                       <span style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                        color: '#94a3b8',
+                        backgroundColor: 'var(--surface-hover)',
+                        color: 'var(--text-muted)',
                         padding: '2px 8px',
                         borderRadius: '12px',
                         fontSize: '0.75rem',
@@ -665,7 +665,7 @@ export default function BoardDetail() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteColumn(status.value, status.label); }}
                         disabled={isSaving}
-                        style={{ background: 'none', border: 'none', color: '#f43f5e', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '0.85rem', padding: '4px', opacity: 0.7, flexShrink: 0 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '0.85rem', padding: '4px', opacity: 0.7, flexShrink: 0 }}
                         title="Spalte löschen"
                         onMouseEnter={(e) => !isSaving && (e.target.style.opacity = 1)}
                         onMouseLeave={(e) => !isSaving && (e.target.style.opacity = 0.7)}
@@ -677,11 +677,11 @@ export default function BoardDetail() {
 
                   {columnTickets.length === 0 && (
                     <div style={{
-                      border: '2px dashed rgba(255, 255, 255, 0.03)',
+                      border: '2px dashed var(--border-soft)',
                       borderRadius: '8px',
                       padding: '20px',
                       textAlign: 'center',
-                      color: '#64748b',
+                      color: 'var(--text-muted)',
                       fontSize: '0.85rem'
                     }}>
                       Keine Tickets
@@ -720,26 +720,26 @@ export default function BoardDetail() {
                           onDragStart={(event) => handleTicketDragStart(event, ticket)}
                           onDragOver={(event) => handleTicketDragOver(event, status.value, ticket)}
                           style={{
-                            backgroundColor: '#0f172a',
-                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            backgroundColor: 'var(--surface-deep)',
+                            border: '1px solid var(--border-soft)',
                             borderRadius: '10px',
                             padding: '14px',
                             cursor: 'grab',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '8px',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                            boxShadow: 'var(--shadow)',
                             opacity: draggedTicketId === ticket.id ? 0.3 : (ticket.status === 'DONE' ? 0.6 : 1),
                             transform: draggedTicketId === ticket.id ? 'scale(0.98)' : 'none',
                             transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                            e.currentTarget.style.boxShadow = 'var(--shadow)';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+                            e.currentTarget.style.borderColor = 'var(--border-soft)';
+                            e.currentTarget.style.boxShadow = 'var(--shadow)';
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
@@ -766,7 +766,7 @@ export default function BoardDetail() {
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <strong style={{
-                              color: '#f8fafc',
+                              color: 'var(--text-strong)',
                               fontSize: '0.9rem',
                               fontWeight: '600',
                               lineHeight: '1.4',
@@ -777,7 +777,7 @@ export default function BoardDetail() {
 
                             {ticket.description && (
                               <p style={{
-                                color: '#94a3b8',
+                                color: 'var(--text-muted)',
                                 fontSize: '0.8rem',
                                 margin: 0,
                                 lineHeight: '1.4',
@@ -792,23 +792,23 @@ export default function BoardDetail() {
                           </div>
 
                           <div style={{
-                            borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+                            borderTop: '1px solid var(--border-soft)',
                             paddingTop: '8px',
                             marginTop: '4px',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                               <span>👤</span>
                               <span style={{
-                                color: getTicketAssigneeValue(ticket) ? '#cbd5e1' : '#64748b',
+                                color: getTicketAssigneeValue(ticket) ? 'var(--text-soft)' : 'var(--text-muted)',
                                 fontWeight: getTicketAssigneeValue(ticket) ? '500' : 'normal'
                               }}>
                                 {getTicketAssigneeLabel(ticket)}
                               </span>
                             </div>
-                            <span style={{ color: '#475569', fontSize: '0.8rem', userSelect: 'none' }}>⋮⋮</span>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', userSelect: 'none' }}>⋮⋮</span>
                           </div>
 
                         </div>
@@ -826,28 +826,28 @@ export default function BoardDetail() {
       {isColumnModalOpen && (
         <div className="modal-overlay" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)',
+          backgroundColor: 'var(--overlay)', backdropFilter: 'blur(4px)',
           display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
-          <div className="modal-content" style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '400px', color: '#f8fafc' }}>
+          <div className="modal-content" style={{ backgroundColor: 'var(--surface-elevated)', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '400px', color: 'var(--text-strong)' }}>
             <h3 style={{ marginTop: 0 }}>Neue Status-Spalte hinzufügen</h3>
             <form onSubmit={handleAddColumn} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Name der Spalte</label>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Name der Spalte</label>
                 <input
                   type="text"
                   value={newColumnName}
                   onChange={(e) => setNewColumnName(e.target.value)}
                   placeholder="z.B. Im Review, Blockiert..."
                   required
-                  style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '10px', color: '#f8fafc', outline: 'none' }}
+                  style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px', color: 'var(--text-strong)', outline: 'none' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button type="submit" className="btn-primary" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--primary)', color: 'var(--text-strong)', border: 'none', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
                   {isSaving ? 'Speichert...' : 'Spalte hinzufügen'}
                 </button>
-                <button type="button" onClick={() => setIsColumnModalOpen(false)} className="btn-secondary" style={{ backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
+                <button type="button" onClick={() => setIsColumnModalOpen(false)} className="btn-secondary" style={{ backgroundColor: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
                   Abbrechen
                 </button>
               </div>
@@ -860,13 +860,13 @@ export default function BoardDetail() {
       {isTicketModalOpen && (
         <div className="modal-overlay" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)',
+          backgroundColor: 'var(--overlay)', backdropFilter: 'blur(4px)',
           display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
         }}>
           <div className="modal-content" style={{
-            backgroundColor: '#1e293b', border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)',
             borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '550px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', color: '#f8fafc',
+            boxShadow: 'var(--shadow-strong)', color: 'var(--text-strong)',
             maxHeight: '90vh', overflowY: 'auto', position: 'relative'
           }}>
             {/* HEADER */}
@@ -874,27 +874,27 @@ export default function BoardDetail() {
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
                 {ticketModalMode === 'create' ? '➕ Neues Ticket erstellen' : '📝 Ticket bearbeiten'}
               </h3>
-              <button onClick={closeTicketModal} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+              <button onClick={closeTicketModal} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
             </div>
 
             {/* FORMULAR */}
             <form onSubmit={handleTicketSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Titel</label>
-                <input type="text" value={ticketForm.title} onChange={(e) => setTicketForm({...ticketForm, title: e.target.value})} required style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Titel</label>
+                <input type="text" value={ticketForm.title} onChange={(e) => setTicketForm({...ticketForm, title: e.target.value})} required style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px', color: 'var(--text-strong)' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Beschreibung</label>
-                <textarea rows="3" value={ticketForm.description || ''} onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Beschreibung</label>
+                <textarea rows="3" value={ticketForm.description || ''} onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})} style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '10px', color: 'var(--text-strong)' }} />
               </div>
 
               {/* DETAILS: Status, Priorität, Zuweisung (Dropdowns) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 {/* Typ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Typ</label>
-                  <select value={ticketForm.type || 'Task'} onChange={(e) => setTicketForm({...ticketForm, type: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Typ</label>
+                  <select value={ticketForm.type || 'Task'} onChange={(e) => setTicketForm({...ticketForm, type: e.target.value})} style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', color: 'var(--text-strong)' }}>
                     {TICKET_TYPES.map((type) => (
                       <option key={type} value={type}>{type}</option>
                     ))}
@@ -903,8 +903,8 @@ export default function BoardDetail() {
 
                 {/* Status */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Status</label>
-                  <select value={ticketForm.status} onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status</label>
+                  <select value={ticketForm.status} onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})} style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', color: 'var(--text-strong)' }}>
                     {columns.map((column) => (
                       <option key={column.value} value={column.value}>{column.label}</option>
                     ))}
@@ -913,8 +913,8 @@ export default function BoardDetail() {
 
                 {/* Priorität Dropdown */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Priorität</label>
-                  <select value={ticketForm.priority || ''} onChange={(e) => setTicketForm({...ticketForm, priority: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Priorität</label>
+                  <select value={ticketForm.priority || ''} onChange={(e) => setTicketForm({...ticketForm, priority: e.target.value})} style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', color: 'var(--text-strong)' }}>
                     <option value="">Keine</option>
                     <option value="Niedrig">Niedrig</option>
                     <option value="Mittel">Mittel</option>
@@ -924,8 +924,8 @@ export default function BoardDetail() {
 
                 {/* Zuweisung Dropdown (Hier muss deine Liste der Board-Mitglieder rein) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Zuweisung</label>
-                  <select value={ticketForm.assigneeUsername || ''} onChange={(e) => setTicketForm({...ticketForm, assigneeUsername: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Zuweisung</label>
+                  <select value={ticketForm.assigneeUsername || ''} onChange={(e) => setTicketForm({...ticketForm, assigneeUsername: e.target.value})} style={{ backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', color: 'var(--text-strong)' }}>
                     <option value="">Nicht zugewiesen</option>
                     {boardMembers?.map(member => (
                       <option key={member.user.username} value={member.user.username}>{member.user.username}</option>
@@ -935,27 +935,27 @@ export default function BoardDetail() {
               </div>
 
               <div style={{ marginTop: '10px' }}>
-                <button type="submit" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 20px', cursor: 'pointer', width: '100%' }}>Speichern</button>
+                <button type="submit" style={{ backgroundColor: 'var(--primary)', color: 'var(--text-strong)', border: 'none', borderRadius: '6px', padding: '10px 20px', cursor: 'pointer', width: '100%' }}>Speichern</button>
               </div>
             </form>
 
             {/* KOMMENTAR-SEKTION */}
             {ticketModalMode === 'edit' && (
-              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #334155' }}>
-                <h4 style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '12px' }}>Diskussion</h4>
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+                <h4 style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '12px' }}>Diskussion</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
                   {activeTicket?.comments?.length > 0 ? activeTicket.comments.map((c, i) => (
-                    <div key={i} style={{ backgroundColor: '#0f172a', padding: '10px 14px', borderRadius: '12px', borderLeft: '4px solid #6366f1' }}>
+                    <div key={i} style={{ backgroundColor: 'var(--surface-deep)', padding: '10px 14px', borderRadius: '12px', borderLeft: '4px solid var(--primary)' }}>
                       <div style={{ marginBottom: '4px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#818cf8' }}>{c.author}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary)' }}>{c.author}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0' }}>{c.text}</p>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)' }}>{c.text}</p>
                     </div>
-                  )) : <p style={{ fontSize: '0.8rem', color: '#475569', textAlign: 'center' }}>Noch keine Kommentare.</p>}
+                  )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>Noch keine Kommentare.</p>}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Schreibe einen Kommentar..." style={{ flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '10px', color: '#fff' }} />
-                  <button onClick={handleAddComment} disabled={isSaving} style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', padding: '0 16px', cursor: 'pointer' }}>Senden</button>
+                  <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Schreibe einen Kommentar..." style={{ flex: 1, backgroundColor: 'var(--surface-deep)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', color: 'var(--text-strong)' }} />
+                  <button onClick={handleAddComment} disabled={isSaving} style={{ backgroundColor: 'var(--primary)', color: 'var(--text-strong)', border: 'none', borderRadius: '8px', padding: '0 16px', cursor: 'pointer' }}>Senden</button>
                 </div>
               </div>
             )}
@@ -965,3 +965,4 @@ export default function BoardDetail() {
     </AppLayout>
   );
 }
+

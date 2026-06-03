@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -28,6 +29,9 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+      <div className="auth-theme-action">
+        <ThemeToggle />
+      </div>
       <div className="auth-card">
         <h2>Konto erstellen</h2>
         <p>Registriere dich, um eigene Boards zu verwalten.</p>

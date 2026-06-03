@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -29,6 +30,9 @@ export default function Login() {
 
   return (
     <div className="auth-container">
+      <div className="auth-theme-action">
+        <ThemeToggle />
+      </div>
       <div className="auth-card">
         <h2>Willkommen zurück</h2>
         <p>Melde dich an, um auf deine Boards zuzugreifen.</p>

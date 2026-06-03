@@ -188,13 +188,13 @@ export default function Dashboard() {
 
         {showInvDropdown && (
           <div className="dropdown-menu">
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#fff' }}>Einladungen</h4>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: 'var(--text-strong)' }}>Einladungen</h4>
             {invitations.length === 0 ? (
-              <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0 }}>Keine Einladungen</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Keine Einladungen</p>
             ) : (
               invitations.map((invitation) => (
                 <div key={invitation.id} className="dropdown-item">
-                  <p style={{ fontSize: '0.85rem', margin: 0, color: '#cbd5e1' }}>
+                  <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-soft)' }}>
                     Von {invitation.board?.owner?.username || 'System'}: <b>{invitation.board?.title}</b>
                   </p>
                   <button className="small-action-btn" onClick={() => acceptInvite(invitation.id)}>
@@ -223,7 +223,7 @@ export default function Dashboard() {
               <div className="board-id-badge">ID: {board.id}</div>
               <h3>{board.title}</h3>
               <p>{board.description}</p>
-              <div style={{ fontSize: '0.8rem', color: '#6366f1', marginBottom: '15px', fontWeight: '500' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginBottom: '15px', fontWeight: '500' }}>
                 Owner: {board.owner?.username || 'Unbekannt'}
               </div>
 
@@ -332,3 +332,4 @@ export default function Dashboard() {
     </AppLayout>
   );
 }
+
