@@ -2,6 +2,7 @@ package de.fom.projektdashboard.repository;
 
 import de.fom.projektdashboard.model.ticket.Ticket;
 import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByBoardIdInOrderByBoardIdAscStatusAscOrderIndexAscCreatedAtAsc(List<Long> boardIds);
 
     List<Ticket> findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(Long boardId, String status);
+
+    // TicketRepository.java
+    @EntityGraph(attributePaths = {"comments"})
+    List<Ticket> findByBoardId(Long boardId);
 
     @Modifying
     @Transactional

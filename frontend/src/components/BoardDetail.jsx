@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+
 import AppLayout from './AppLayout';
 import {
   createTicket,
@@ -7,9 +8,12 @@ import {
   loadTickets,
   moveTicket,
   updateTicket,
+  deleteTicket,
   deleteColumn,
   createColumnApi,
-  updateColumnApi
+  updateColumnApi,
+  createComment,
+  deleteCommentApi
 } from '../services/ticketApi';
 
 const TICKET_TYPES = ['Aufgabe', 'Bug', 'Feature'];
@@ -32,6 +36,7 @@ const createEmptyTicketForm = () => ({
 
 export default function BoardDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   // Initialer State mit Standard-Fallbacks (wird direkt im Anschluss durch DB-Daten ersetzt)
@@ -74,6 +79,11 @@ export default function BoardDetail() {
   const draggedTicketRef = useRef(null);
   const draggedColumnRef = useRef(null);
   const ignoreNextTicketClickRef = useRef(false);
+
+  // Bei den anderen useState Zeilen
+  const [comments, setComments] = useState([]); // Liste für Kommentare
+  const [newComment, setNewComment] = useState(''); // Text für neues Kommentar
+  const [commentText, setCommentText] = useState('');
 
   // Backup im LocalStorage zur schnellen UI-Reaktion
   useEffect(() => {
@@ -150,9 +160,7 @@ export default function BoardDetail() {
 
     setIsSaving(true);
     try {
-      // Sendet Daten an den Spring Controller (@PostMapping)
       await createColumnApi(id, { value: valueKey, label: newColumnName.trim() }, token);
-
       setColumns([...columns, { value: valueKey, label: newColumnName.trim() }]);
       setNewColumnName('');
       setIsColumnModalOpen(false);
@@ -179,10 +187,7 @@ export default function BoardDetail() {
 
     setIsSaving(true);
     try {
-      // Sendet Daten an den Spring Controller (@PutMapping("/{statusValue}"))
       await updateColumnApi(id, statusValue, { label: trimmedLabel }, token);
-
-      // UI aktualisieren
       setColumns(columns.map(col =>
         col.value === statusValue ? { ...col, label: trimmedLabel } : col
       ));
@@ -194,7 +199,7 @@ export default function BoardDetail() {
     }
   };
 
-  // SPALTE AUS DB LÖSCHEN (Erste Spalte 'TODO' bleibt blockiert)
+  // SPALTE AUS DB LÖSCHEN
   const handleDeleteColumn = async (statusValue, statusLabel) => {
     if (statusValue === 'TODO') {
       alert("Die Standard-Spalte 'Zu tun' darf nicht gelöscht werden!");
@@ -208,10 +213,9 @@ export default function BoardDetail() {
 
     setIsSaving(true);
     try {
-      // Ruft @DeleteMapping("/{statusValue}") auf
       await deleteColumn(id, statusValue, token);
       setColumns(columns.filter(col => col.value !== statusValue));
-      await fetchTickets(); // Tickets neu laden (wurden serverseitig verschoben)
+      await fetchTickets();
     } catch (err) {
       setError(err.message || 'Spalte konnte nicht gelöscht werden.');
     } finally {
@@ -220,7 +224,7 @@ export default function BoardDetail() {
   };
 
   // ==========================================
-  // DRAG & DROP FÜR SPALTEN (CLIENT-ONLY SORTIERUNG)
+  // DRAG & DROP FÜR SPALTEN
   // ==========================================
   const handleColumnDragStart = (event, colValue) => {
     if (isSaving || editingColumnValue) return;
@@ -384,6 +388,62 @@ export default function BoardDetail() {
     }
   };
 
+  const handleDeleteTicket = async () => {
+    if (!activeTicket) return;
+
+    const confirmDelete = window.confirm(`Möchtest du das Ticket "${activeTicket.title}" wirklich unwiderruflich löschen?`);
+    if (!confirmDelete) return;
+
+    setIsSaving(true);
+    setError('');
+    try {
+      await deleteTicket(activeTicket.id, token);
+      closeTicketModal();
+      await fetchTickets();
+    } catch (err) {
+      setError(err.message || 'Fehler beim Löschen des Tickets.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    setIsSaving(true);
+    try {
+      // 1. API Aufruf
+      const newComment = await createComment(activeTicket.id, { text: commentText }, token);
+
+      // 2. SOFORTIGE Aktualisierung des UI (ohne komplettes fetchTickets)
+      setActiveTicket(prev => ({
+        ...prev,
+        comments: [...(prev.comments || []), newComment]
+      }));
+
+      // 3. Input leeren
+      setCommentText('');
+    } catch (err) {
+      alert("Kommentar konnte nicht gespeichert werden.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await deleteCommentApi(commentId, token);
+
+      // Lokales State-Update: Entferne den Kommentar aus der Liste
+      setActiveTicket(prev => ({
+        ...prev,
+        comments: prev.comments.filter(c => c.id !== commentId)
+      }));
+    } catch (err) {
+      alert("Konnte Kommentar nicht löschen: " + err.message);
+    }
+  };
+
   const handleMoveTicket = async (ticket, status, orderIndex) => {
     setIsSaving(true);
     setError('');
@@ -401,12 +461,41 @@ export default function BoardDetail() {
     <AppLayout>
       <div className="board-detail-page">
 
-        <div className="board-detail-header">
+        {/* HEADER AREA */}
+        <div className="board-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h1>Board (ID: {id})</h1>
             <p style={{ color: '#9ca3af', margin: 0 }}>Klicke auf Spaltennamen zum Umbenennen. Änderungen fließen direkt in die DB.</p>
           </div>
-          <div className="board-header-actions">
+          <div className="board-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
+            {/* BUTTON ZUR STATSDASHBOARD SEITE */}
+            <button
+              className="icon-btn"
+              onClick={() => navigate(`/dashboard/${id}`)}
+              style={{
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid #6366f1',
+                color: '#6366f1',
+                borderRadius: '6px',
+                padding: '8px 14px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#6366f1';
+                e.target.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+                e.target.style.color = '#6366f1';
+              }}
+            >
+              📈 Dashboard anzeigen
+            </button>
+
             <button className="icon-btn" onClick={() => setIsColumnModalOpen(true)}>
               ➕ Spalte hinzufügen
             </button>
@@ -548,7 +637,6 @@ export default function BoardDetail() {
                       </span>
                     </div>
 
-                    {/* Erste Spalte (TODO) bleibt unlöschbar */}
                     {status.value !== 'TODO' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteColumn(status.value, status.label); }}
@@ -711,76 +799,134 @@ export default function BoardDetail() {
 
       {/* MODAL: NEUE SPALTE ERSTELLEN */}
       {isColumnModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Neue Status-Spalte hinzufügen</h3>
-            <form onSubmit={handleAddColumn}>
-              <div className="input-group">
-                <label>Name der Spalte</label>
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }}>
+          <div className="modal-content" style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '400px', color: '#f8fafc' }}>
+            <h3 style={{ marginTop: 0 }}>Neue Status-Spalte hinzufügen</h3>
+            <form onSubmit={handleAddColumn} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Name der Spalte</label>
                 <input
                   type="text"
                   value={newColumnName}
                   onChange={(e) => setNewColumnName(e.target.value)}
                   placeholder="z.B. Im Review, Blockiert..."
                   required
+                  style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '10px', color: '#f8fafc', outline: 'none' }}
                 />
               </div>
-              <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? 'Speichert...' : 'Spalte hinzufügen'}</button>
-              <button type="button" onClick={() => setIsColumnModalOpen(false)} className="btn-secondary" disabled={isSaving}>Abbrechen</button>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
+                  {isSaving ? 'Speichert...' : 'Spalte hinzufügen'}
+                </button>
+                <button type="button" onClick={() => setIsColumnModalOpen(false)} className="btn-secondary" style={{ backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '10px 16px', cursor: 'pointer' }} disabled={isSaving}>
+                  Abbrechen
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
       {/* TICKET MODAL */}
+      {/* TICKET MODAL */}
       {isTicketModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '550px' }}>
-            <h3>{ticketModalMode === 'create' ? 'Neues Ticket' : 'Ticket bearbeiten'}</h3>
-            <form onSubmit={handleTicketSubmit}>
-              <div className="input-group">
-                <label>Titel</label>
-                <input type="text" value={ticketForm.title} onChange={(e) => setTicketForm({ ...ticketForm, title: e.target.value })} required />
-              </div>
-              <div className="input-group">
-                <label>Beschreibung</label>
-                <textarea rows="3" value={ticketForm.description} onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })} />
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: '#1e293b', border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '550px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', color: '#f8fafc',
+            maxHeight: '90vh', overflowY: 'auto', position: 'relative'
+          }}>
+            {/* HEADER MIT SCHLIESSEN-BUTTON */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
+                {ticketModalMode === 'create' ? '➕ Neues Ticket erstellen' : '📝 Ticket bearbeiten'}
+              </h3>
+              <button
+                onClick={closeTicketModal}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* FORMULAR */}
+            <form onSubmit={handleTicketSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Titel</label>
+                <input type="text" value={ticketForm.title} onChange={(e) => setTicketForm({...ticketForm, title: e.target.value})} required style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div className="input-group">
-                  <label>Typ</label>
-                  <select value={ticketForm.type} onChange={(e) => setTicketForm({ ...ticketForm, type: e.target.value })}>{TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select>
-                </div>
-                <div className="input-group">
-                  <label>Priorität</label>
-                  <select value={ticketForm.priority} onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })}>{TICKET_PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select>
-                </div>
+              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Beschreibung</label>
+                <textarea rows="3" value={ticketForm.description || ''} onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div className="input-group">
-                  <label>Status (Spalte)</label>
-                  <select value={ticketForm.status} onChange={(e) => setTicketForm({ ...ticketForm, status: e.target.value })}>
-                    {columns.map((col) => (
-                      <option key={col.value} value={col.value}>{col.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label>Zugewiesen an</label>
-                  <select value={ticketForm.assigneeUsername} onChange={(e) => setTicketForm({ ...ticketForm, assigneeUsername: e.target.value })}>
-                    <option value="">nicht zugewiesen</option>
-                    {boardMembers.map((m) => { const u = getMemberUsername(m); return u && <option key={u} value={u}>{u}</option>; })}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '25px' }}>
-                <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? 'Speichert...' : 'Speichern'}</button>
-                <button type="button" onClick={closeTicketModal} className="btn-secondary">Abbrechen</button>
+              {/* BUTTONS */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                <button type="submit" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 20px', cursor: 'pointer' }}>Speichern</button>
+                {ticketModalMode === 'edit' && (
+                  <button type="button" onClick={handleDeleteTicket} style={{ backgroundColor: '#f43f5e', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 14px', cursor: 'pointer' }}>🗑️ Löschen</button>
+                )}
               </div>
             </form>
+
+            {/* KOMMENTAR-SEKTION */}
+            {/* KOMMENTAR-SEKTION */}
+            {ticketModalMode === 'edit' && (
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #334155' }}>
+                <h4 style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Diskussion</h4>
+
+                {/* Kommentarliste */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {activeTicket?.comments?.length > 0 ? (
+                    activeTicket.comments.map((c, i) => (
+                      <div key={i} style={{
+                        backgroundColor: '#1e293b',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        borderBottomLeftRadius: '2px',
+                        borderLeft: '4px solid #6366f1'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#818cf8' }}>{c.author}</span>
+                          <span style={{ fontSize: '0.65rem', color: '#475569' }}>{new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0', wordBreak: 'break-word' }}>{c.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: '0.8rem', color: '#475569', textAlign: 'center' }}>Noch keine Kommentare.</p>
+                  )}
+                </div>
+
+                {/* Input-Bereich */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Schreibe einen Kommentar..."
+                    style={{ flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '10px', color: '#fff', fontSize: '0.9rem' }}
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    disabled={isSaving}
+                    style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', padding: '0 16px', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    {isSaving ? '...' : 'Senden'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

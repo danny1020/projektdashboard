@@ -155,3 +155,70 @@ export async function deleteColumn(boardId, statusValue, token) {
   }
   return response.json();
 }
+
+
+/**
+ * Löscht ein Ticket vollständig aus der Datenbank.
+ * Entspricht im Controller: @DeleteMapping("/{id}") -> /api/tickets/{id}
+ */
+export async function deleteTicket(ticketId, token) {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Ticket konnte nicht gelöscht werden.');
+  }
+  return true;
+}
+
+/**
+ * Lädt die Live-Kennzahlen für das Dashboard eines bestimmten Boards.
+ * Entspricht im Controller: @GetMapping("/stats") -> /api/tickets/stats?boardId=2
+ */
+// Ändere dies in deiner ticketApi.js
+export async function loadBoardStats(boardId, token) {
+  const response = await fetch(`${API_BASE_URL}/tickets/stats/${boardId}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+
+  if (!response.ok) {
+    // Hier geben wir den echten Statuscode zurück
+    const errorBody = await response.text();
+    throw new Error(`Server antwortete mit ${response.status}: ${errorBody}`);
+  }
+
+  return response.json();
+}
+
+export async function createComment(ticketId, commentData, token) {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/comments`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(commentData)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Fehler beim Speichern des Kommentars');
+  }
+  return response.json();
+}
+
+export async function deleteCommentApi(commentId, token) {
+  const response = await fetch(`${API_BASE_URL}/tickets/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+
+  if (!response.ok) throw new Error('Fehler beim Löschen des Kommentars');
+  return true;
+}
