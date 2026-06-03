@@ -33,18 +33,7 @@ export default function AppLayout({ children, actions, currentUser }) {
           <h2>PROJECT HUB</h2>
           <nav className="main-nav">
             <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Dashboard
-            </NavLink>
-            <NavLink
-              to={boardPath}
-              onClick={(e) => {
-                if (!lastBoardId) e.preventDefault();
-              }}
-              className={({ isActive }) =>
-                `${isActive ? 'nav-link active' : 'nav-link'}${lastBoardId ? '' : ' disabled'}`
-              }
-            >
-              Board
+              Boards
             </NavLink>
           </nav>
         </div>

@@ -5,6 +5,18 @@ const getHeaders = (token) => ({
   'Authorization': `Bearer ${token}`
 });
 
+async function readErrorMessage(response, fallbackMessage) {
+  const text = await response.text();
+  if (!text) return fallbackMessage;
+
+  try {
+    const errorData = JSON.parse(text);
+    return errorData.message || errorData.error || text;
+  } catch (error) {
+    return text;
+  }
+}
+
 // ==========================================
 // TICKETS API
 // ==========================================
@@ -20,8 +32,7 @@ export async function loadTickets(boardId, token) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Tickets konnten nicht geladen werden.');
+    throw new Error(await readErrorMessage(response, 'Tickets konnten nicht geladen werden.'));
   }
   return response.json();
 }
@@ -38,8 +49,7 @@ export async function createTicket(ticketData, token) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Ticket konnte nicht erstellt werden.');
+    throw new Error(await readErrorMessage(response, 'Ticket konnte nicht erstellt werden.'));
   }
   return response.json();
 }
@@ -56,8 +66,7 @@ export async function updateTicket(ticketId, ticketData, token) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Ticket konnte nicht aktualisiert werden.');
+    throw new Error(await readErrorMessage(response, 'Ticket konnte nicht aktualisiert werden.'));
   }
   return response.json();
 }
@@ -74,8 +83,7 @@ export async function moveTicket(ticketId, moveData, token) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Ticket konnte nicht verschoben werden.');
+    throw new Error(await readErrorMessage(response, 'Ticket konnte nicht verschoben werden.'));
   }
   return response.json();
 }
@@ -144,7 +152,7 @@ export async function updateColumnApi(boardId, statusValue, data, token) {
  * Entspricht im Controller: @DeleteMapping("/columns") -> /api/tickets/columns?boardId=2&status=REVIEW
  */
 export async function deleteColumn(boardId, statusValue, token) {
-  const response = await fetch(`${API_BASE_URL}/tickets/columns?boardId=${boardId}&status=${statusValue}`, {
+  const response = await fetch(`${API_BASE_URL}/boards/${boardId}/columns/${statusValue}`, {
     method: 'DELETE',
     headers: getHeaders(token)
   });

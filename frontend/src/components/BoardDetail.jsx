@@ -16,7 +16,7 @@ import {
   deleteCommentApi
 } from '../services/ticketApi';
 
-const TICKET_TYPES = ['Aufgabe', 'Bug', 'Feature'];
+const TICKET_TYPES = ['Task', 'Bug', 'Feature'];
 
 const TICKET_PRIORITIES = [
   { value: '', label: 'nicht gesetzt' },
@@ -28,7 +28,7 @@ const TICKET_PRIORITIES = [
 const createEmptyTicketForm = () => ({
   title: '',
   description: '',
-  type: 'Aufgabe',
+  type: 'Task',
   priority: '',
   status: 'TODO',
   assigneeUsername: ''
@@ -38,6 +38,8 @@ export default function BoardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const authHeaders = { Authorization: `Bearer ${token}` };
+  const [boardTitle, setBoardTitle] = useState(() => localStorage.getItem(`board_title_${id}`) || `Board ${id}`);
 
   // Initialer State mit Standard-Fallbacks (wird direkt im Anschluss durch DB-Daten ersetzt)
   const [columns, setColumns] = useState(() => {
@@ -94,6 +96,7 @@ export default function BoardDetail() {
     localStorage.setItem('lastBoardId', id);
     fetchTickets();
     fetchBoardMembers();
+    fetchBoardTitle();
   }, [id]);
 
   const fetchTickets = async () => {
@@ -102,6 +105,10 @@ export default function BoardDetail() {
     try {
       const fetchedTickets = await loadTickets(id, token);
       setTickets(fetchedTickets);
+      if (fetchedTickets[0]?.boardTitle) {
+        setBoardTitle(fetchedTickets[0].boardTitle);
+        localStorage.setItem(`board_title_${id}`, fetchedTickets[0].boardTitle);
+      }
 
       // AUTOMATISCHE SPALTENERKENNUNG AUS DER DB (Falls Tickets neue Statuswerte besitzen)
       setColumns((prevColumns) => {
@@ -136,6 +143,22 @@ export default function BoardDetail() {
     try { setBoardMembers(await loadBoardMembers(id, token)); } catch (e) { setBoardMembers([]); }
   };
 
+  const fetchBoardTitle = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/boards', { headers: authHeaders });
+      if (!response.ok) return;
+
+      const boards = await response.json();
+      const currentBoard = boards.find((board) => String(board.id) === String(id));
+      if (!currentBoard?.title) return;
+
+      setBoardTitle(currentBoard.title);
+      localStorage.setItem(`board_title_${id}`, currentBoard.title);
+    } catch (error) {
+      // Der Titel aus localStorage oder der ID-Fallback reicht, falls die Boardliste nicht geladen werden kann.
+    }
+  };
+
   const getTicketsByStatus = (statusValue) => {
     return tickets
       .filter((ticket) => String(ticket.status) === String(statusValue))
@@ -145,6 +168,7 @@ export default function BoardDetail() {
   const getMemberUsername = (member) => member.user?.username || member.username || '';
   const getTicketAssigneeValue = (ticket) => ticket.assignee?.username || ticket.assigneeUsername || '';
   const getTicketAssigneeLabel = (ticket) => getTicketAssigneeValue(ticket) || 'nicht zugewiesen';
+  const normalizeTicketType = (type) => type === 'Aufgabe' ? 'Task' : (type || 'Task');
 
   // NEUE SPALTE IN DB ANLEGEN
   const handleAddColumn = async (e) => {
@@ -346,7 +370,7 @@ export default function BoardDetail() {
     setTicketForm({
       title: ticket.title || '',
       description: ticket.description || '',
-      type: ticket.type || 'Aufgabe',
+      type: normalizeTicketType(ticket.type),
       priority: ticket.priority || '',
       status: ticket.status || 'TODO',
       assigneeUsername: getTicketAssigneeValue(ticket)
@@ -367,7 +391,7 @@ export default function BoardDetail() {
     const payload = {
       title: ticketForm.title,
       description: ticketForm.description,
-      type: ticketForm.type,
+      type: normalizeTicketType(ticketForm.type),
       priority: ticketForm.priority,
       status: ticketForm.status,
       assigneeUsername: ticketForm.assigneeUsername
@@ -464,7 +488,7 @@ export default function BoardDetail() {
         {/* HEADER AREA */}
         <div className="board-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
-            <h1>Board (ID: {id})</h1>
+            <h1>{boardTitle}</h1>
             <p style={{ color: '#9ca3af', margin: 0 }}>Klicke auf Spaltennamen zum Umbenennen. Änderungen fließen direkt in die DB.</p>
           </div>
           <div className="board-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -493,7 +517,7 @@ export default function BoardDetail() {
                 e.target.style.color = '#6366f1';
               }}
             >
-              📈 Dashboard anzeigen
+              📈 Board Analyse anzeigen
             </button>
 
             <button className="icon-btn" onClick={() => setIsColumnModalOpen(true)}>
@@ -670,9 +694,10 @@ export default function BoardDetail() {
                       const typeColors = {
                         'Bug': { bg: '#fef2f2', text: '#991b1b', border: '#fca5a5' },
                         'Feature': { bg: '#eff6ff', text: '#1e40af', border: '#93c5fd' },
-                        'Aufgabe': { bg: '#f0fdf4', text: '#166534', border: '#86efac' }
+                        'Task': { bg: '#f0fdf4', text: '#166534', border: '#86efac' }
                       };
-                      const currentType = typeColors[ticket.type] || typeColors['Aufgabe'];
+                      const ticketType = normalizeTicketType(ticket.type);
+                      const currentType = typeColors[ticketType] || typeColors['Task'];
 
                       const priorityColors = {
                         'Hoch': { color: '#ef4444', label: '▲ Hoch' },
@@ -729,7 +754,7 @@ export default function BoardDetail() {
                               textTransform: 'uppercase',
                               letterSpacing: '0.3px'
                             }}>
-                              {ticket.type || 'Aufgabe'}
+                              {ticketType}
                             </span>
 
                             {currentPriority && (
@@ -865,15 +890,24 @@ export default function BoardDetail() {
               </div>
 
               {/* DETAILS: Status, Priorität, Zuweisung (Dropdowns) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {/* Typ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Typ</label>
+                  <select value={ticketForm.type || 'Task'} onChange={(e) => setTicketForm({...ticketForm, type: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                    {TICKET_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Status */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Status</label>
                   <select value={ticketForm.status} onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
-                    <option value="BACKLOG">Backlog</option>
-                    <option value="TODO">To Do</option>
-                    <option value="IN_PROGRESS">In Arbeit</option>
-                    <option value="FERTIG">Fertig</option>
+                    {columns.map((column) => (
+                      <option key={column.value} value={column.value}>{column.label}</option>
+                    ))}
                   </select>
                 </div>
 

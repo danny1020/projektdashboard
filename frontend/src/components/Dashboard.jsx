@@ -115,9 +115,10 @@ export default function Dashboard() {
     }
   };
 
-  const openBoard = (boardId) => {
-    localStorage.setItem('lastBoardId', boardId);
-    navigate(`/board/${boardId}`);
+  const openBoard = (board) => {
+    localStorage.setItem('lastBoardId', board.id);
+    localStorage.setItem(`board_title_${board.id}`, board.title);
+    navigate(`/board/${board.id}`);
   };
 
   const openEditModal = (board) => {
@@ -233,7 +234,7 @@ export default function Dashboard() {
                   )}
                   <button className="icon-btn" onClick={() => openMemberModal(board)}>Members</button>
                 </div>
-                <button className="view-btn" onClick={() => openBoard(board.id)}>Öffnen</button>
+                <button className="view-btn" onClick={() => openBoard(board)}>Öffnen</button>
               </div>
             </div>
           );

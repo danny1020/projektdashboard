@@ -370,10 +370,13 @@ public class TicketController {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    // Setzt Aufgabe als Standard, wenn im Formular kein Typ ausgewählt wurde.
+    // Setzt Task als Standard, wenn im Formular kein Typ ausgewählt wurde.
     private String normalizeTicketType(String value) {
         String normalized = normalizeText(value);
-        return normalized == null ? "Aufgabe" : normalized;
+        if ("Aufgabe".equalsIgnoreCase(normalized)) {
+            return "Task";
+        }
+        return normalized == null ? "Task" : normalized;
     }
 
     // Baut eine einheitliche 400-Fehlerantwort.

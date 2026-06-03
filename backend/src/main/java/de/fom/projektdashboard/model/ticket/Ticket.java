@@ -26,7 +26,7 @@ public class Ticket {
     private String description;
 
     @Column(name = "ticket_type")
-    private String type = "Aufgabe";
+    private String type = "Task";
 
     private String priority;
 
@@ -61,7 +61,7 @@ public class Ticket {
             status = "TODO";
         }
         if (type == null || type.isBlank()) {
-            type = "Aufgabe";
+            type = "Task";
         }
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
