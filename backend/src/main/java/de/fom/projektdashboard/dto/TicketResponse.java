@@ -1,11 +1,12 @@
 package de.fom.projektdashboard.dto;
 
+import de.fom.projektdashboard.model.ticket.Comment;
 import de.fom.projektdashboard.model.ticket.Ticket;
-import de.fom.projektdashboard.model.ticket.TicketStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -18,10 +19,11 @@ public class TicketResponse {
     private String type;
     private String priority;
     private String assigneeUsername;
-    private TicketStatus status;
+    private String status;
     private Integer orderIndex;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<Comment> comments;
 
     // Wandelt die Datenbank-Entity in eine sichere API-Antwort ohne verschachtelte Userdaten um.
     public static TicketResponse from(Ticket ticket) {
@@ -37,7 +39,8 @@ public class TicketResponse {
             ticket.getStatus(),
             ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex(),
             ticket.getCreatedAt(),
-            ticket.getUpdatedAt()
+            ticket.getUpdatedAt(),
+            ticket.getComments()
         );
     }
 }

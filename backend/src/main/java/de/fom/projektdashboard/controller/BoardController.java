@@ -5,15 +5,17 @@ import de.fom.projektdashboard.model.User;
 import de.fom.projektdashboard.model.board.Board;
 import de.fom.projektdashboard.model.board.BoardMember;
 import de.fom.projektdashboard.model.board.BoardRole;
-import de.fom.projektdashboard.repository.BoardMemberRepository;
-import de.fom.projektdashboard.repository.BoardRepository;
-import de.fom.projektdashboard.repository.InvitationRepository;
-import de.fom.projektdashboard.repository.UserRepository;
+import de.fom.projektdashboard.model.ticket.Ticket;
+import de.fom.projektdashboard.repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/boards")
@@ -23,13 +25,15 @@ public class BoardController {
     private final UserRepository userRepository;
     private final BoardMemberRepository boardMemberRepository;
     private final InvitationRepository invitationRepository;
+    private final TicketRepository ticketRepository;
 
     public BoardController(BoardRepository boardRepository, UserRepository userRepository,
-                           BoardMemberRepository boardMemberRepository, InvitationRepository invitationRepository) {
+                           BoardMemberRepository boardMemberRepository, InvitationRepository invitationRepository, TicketRepository ticketRepository) {
         this.boardRepository = boardRepository;
         this.userRepository = userRepository;
         this.boardMemberRepository = boardMemberRepository;
         this.invitationRepository = invitationRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     // 1. Alle Boards des aktuellen Users holen (Eigene + Boards wo er Mitglied ist)
@@ -175,5 +179,29 @@ public class BoardController {
         invitationRepository.save(invitation);
 
         return ResponseEntity.ok("Einladung verschickt!");
+    }
+
+    @GetMapping("/stats/{boardId}")
+    public ResponseEntity<?> getBoardStats(@PathVariable Long boardId, Principal principal) {
+        // Zugriff prüfen
+        if (boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName()).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Zugriff verweigert"));
+        }
+
+        List<Ticket> tickets = ticketRepository.findByBoardIdOrderByStatusAscOrderIndexAscCreatedAtAsc(boardId);
+
+        // Gruppierung
+        Map<String, Long> statusCounts = tickets.stream()
+            .collect(Collectors.groupingBy(
+                t -> t.getStatus() == null ? "TODO" : t.getStatus(),
+                Collectors.counting()
+            ));
+
+        // DTO-Struktur: Das Frontend erwartet genau das
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalTickets", (long) tickets.size());
+        response.put("statusCounts", statusCounts);
+
+        return ResponseEntity.ok(response);
     }
 }

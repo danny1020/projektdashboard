@@ -1,11 +1,14 @@
 package de.fom.projektdashboard.model.ticket;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import de.fom.projektdashboard.model.board.Board;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tickets")
@@ -30,9 +33,8 @@ public class Ticket {
     @Column(name = "assignee_username")
     private String assigneeUsername;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TicketStatus status = TicketStatus.TODO;
+    private String status = "TODO";
 
     @Column(nullable = false)
     private Integer orderIndex = 0;
@@ -47,11 +49,16 @@ public class Ticket {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // Ticket.java
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference // <--- PROBIER DAS ANSTELLE VON @JsonIgnore IN DER ENTITY!
+    private List<Comment> comments = new ArrayList<>();
+
     // Setzt Standardwerte und Zeitstempel, bevor ein Ticket erstmals gespeichert wird.
     @PrePersist
     void onCreate() {
         if (status == null) {
-            status = TicketStatus.TODO;
+            status = "TODO";
         }
         if (type == null || type.isBlank()) {
             type = "Aufgabe";

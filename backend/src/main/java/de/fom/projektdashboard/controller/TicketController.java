@@ -7,10 +7,11 @@ import de.fom.projektdashboard.dto.TicketResponse;
 import de.fom.projektdashboard.model.board.Board;
 import de.fom.projektdashboard.model.board.BoardMember;
 import de.fom.projektdashboard.model.board.BoardRole;
+import de.fom.projektdashboard.model.ticket.Comment;
 import de.fom.projektdashboard.model.ticket.Ticket;
-import de.fom.projektdashboard.model.ticket.TicketStatus;
 import de.fom.projektdashboard.repository.BoardMemberRepository;
 import de.fom.projektdashboard.repository.BoardRepository;
+import de.fom.projektdashboard.repository.CommentRepository;
 import de.fom.projektdashboard.repository.TicketRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,10 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -31,12 +30,14 @@ public class TicketController {
     private final TicketRepository ticketRepository;
     private final BoardRepository boardRepository;
     private final BoardMemberRepository boardMemberRepository;
+    private final CommentRepository commentRepository;
 
     public TicketController(TicketRepository ticketRepository, BoardRepository boardRepository,
-                            BoardMemberRepository boardMemberRepository) {
+                            BoardMemberRepository boardMemberRepository, CommentRepository commentRepository) {
         this.ticketRepository = ticketRepository;
         this.boardRepository = boardRepository;
         this.boardMemberRepository = boardMemberRepository;
+        this.commentRepository = commentRepository;
     }
 
     // Lädt Tickets für ein bestimmtes Board oder alle Boards des eingeloggten Users.
@@ -63,6 +64,8 @@ public class TicketController {
 
         return ResponseEntity.ok(tickets.stream().map(TicketResponse::from).toList());
     }
+
+
 
     // Erstellt ein neues Ticket in einem Board, wenn der User dort Schreibrechte hat.
     @PostMapping
@@ -95,7 +98,9 @@ public class TicketController {
             }
             ticket.setAssigneeUsername(assignee.get().getUser().getUsername());
         }
-        ticket.setStatus(request.getStatus() == null ? TicketStatus.TODO : request.getStatus());
+
+        // Flexibler String-FallBack statt Enum
+        ticket.setStatus(request.getStatus() == null ? "TODO" : request.getStatus());
         ticket.setOrderIndex(0);
 
         Ticket savedTicket = ticketRepository.save(ticket);
@@ -166,7 +171,7 @@ public class TicketController {
         }
 
         if (request.getStatus() != null || request.getOrderIndex() != null) {
-            TicketStatus targetStatus = request.getStatus() == null ? ticket.getStatus() : request.getStatus();
+            String targetStatus = request.getStatus() == null ? ticket.getStatus() : request.getStatus();
             int targetOrderIndex = request.getOrderIndex() == null ? currentOrderIndex(ticket) : request.getOrderIndex().intValue();
             moveTicketTo(ticket, targetStatus, targetOrderIndex);
             changed = true;
@@ -202,6 +207,127 @@ public class TicketController {
         return ResponseEntity.ok(TicketResponse.from(ticket));
     }
 
+    // Löscht eine Statusspalte für ein Board und verschiebt verbliebene Tickets nach "TODO"
+    @DeleteMapping("/columns")
+    @Transactional
+    public ResponseEntity<?> deleteColumn(@RequestParam Long boardId, @RequestParam String status, Principal principal) {
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName());
+        if (membership.isEmpty()) {
+            return forbidden("Du hast keinen Zugriff auf dieses Board.");
+        }
+        if (!canWriteTickets(membership.get().getRole())) {
+            return forbidden("Du darfst in diesem Board keine Spalten löschen.");
+        }
+
+        // Sicherheitscheck: Die Standardspalte "TODO" sollte nicht gelöscht werden
+        if ("TODO".equalsIgnoreCase(status)) {
+            return badRequest("Die Standard-Spalte 'TODO' kann nicht gelöscht werden.");
+        }
+
+        // Alle Tickets aus der zu löschenden Spalte holen
+        List<Ticket> ticketsInColumn = ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status);
+
+        if (!ticketsInColumn.isEmpty()) {
+            // Option: Verschiebe alle Tickets in die "TODO"-Spalte
+            List<Ticket> todoTickets = new ArrayList<>(
+                ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, "TODO")
+            );
+
+            for (Ticket ticket : ticketsInColumn) {
+                ticket.setStatus("TODO");
+                todoTickets.add(ticket);
+            }
+
+            // Indizes für die TODO-Spalte neu aufbauen und alles speichern
+            reindexTickets(todoTickets);
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Spalte erfolgreich gelöscht und Tickets verschoben."));
+    }
+
+    // Füge diesen Endpunkt in deinen de.fom.projektdashboard.controller.TicketController ein:
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteTicket(@PathVariable Long id, Principal principal) {
+        Ticket ticket = ticketRepository.findById(id).orElse(null);
+        if (ticket == null) {
+            return notFound("Ticket wurde nicht gefunden.");
+        }
+
+        // Berechtigungsprüfung
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(
+            ticket.getBoard().getId(), principal.getName()
+        );
+        if (membership.isEmpty()) {
+            return forbidden("Du hast keinen Zugriff auf dieses Ticket.");
+        }
+        if (!canWriteTickets(membership.get().getRole())) {
+            return forbidden("Du darfst dieses Ticket nicht löschen.");
+        }
+
+        Long boardId = ticket.getBoard().getId();
+        String status = ticket.getStatus();
+        Long ticketId = ticket.getId();
+
+        // 1. Ticket löschen
+        ticketRepository.delete(ticket);
+
+        // 2. Lücke im orderIndex der betroffenen Spalte schließen
+        reindexColumnWithoutTicket(boardId, status, ticketId);
+
+        return ResponseEntity.ok(Map.of("message", "Ticket erfolgreich gelöscht."));
+    }
+
+    // Füge diesen Endpunkt in deinen de.fom.projektdashboard.controller.TicketController ein:
+
+    @GetMapping("/stats/{boardId}")
+    public ResponseEntity<?> getBoardStats(@PathVariable Long boardId, Principal principal) {
+        // 1. Zugriff prüfen
+        Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName());
+        if (membership.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Zugriff verweigert."));
+        }
+
+        // 2. Alle Tickets des Boards laden
+        List<Ticket> tickets = ticketRepository.findByBoardIdOrderByStatusAscOrderIndexAscCreatedAtAsc(boardId);
+
+        // 3. Dynamische Gruppierung nach Status
+        Map<String, Long> statusCounts = tickets.stream()
+            .collect(Collectors.groupingBy(
+                t -> t.getStatus() != null ? t.getStatus() : "UNBEKANNT",
+                Collectors.counting()
+            ));
+
+        // 4. Antwort zusammenstellen
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalTickets", (long) tickets.size());
+        response.put("statusCounts", statusCounts);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/board/{boardId}/tickets")
+    public List<Ticket> getTickets(@PathVariable Long boardId) {
+        // Ändere es hier von .findAll() oder was auch immer dort steht zu:
+        return ticketRepository.findByBoardId(boardId);
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(@PathVariable Long commentId, Principal principal) {
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Kommentar nicht gefunden"));
+
+        // Sicherheitscheck: Darf der User den Kommentar löschen?
+        // Hier prüfen wir, ob der Name des Authors mit dem eingeloggten User übereinstimmt
+        if (!comment.getAuthor().equals(principal.getName())) {
+            return ResponseEntity.status(403).body("Du darfst nur deine eigenen Kommentare löschen.");
+        }
+
+        commentRepository.delete(comment);
+        return ResponseEntity.ok().build();
+    }
+
     // Prüft, ob eine Board-Rolle Tickets erstellen und bearbeiten darf.
     private boolean canWriteTickets(BoardRole role) {
         return role == BoardRole.OWNER || role == BoardRole.ADMIN || role == BoardRole.MITARBEITER;
@@ -212,12 +338,12 @@ public class TicketController {
         return ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex();
     }
 
-    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu.
-    private void moveTicketTo(Ticket ticket, TicketStatus targetStatus, int targetOrderIndex) {
+    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu. (Auf String angepasst)
+    private void moveTicketTo(Ticket ticket, String targetStatus, int targetOrderIndex) {
         Long boardId = ticket.getBoard().getId();
-        TicketStatus oldStatus = ticket.getStatus();
+        String oldStatus = ticket.getStatus();
 
-        if (oldStatus != targetStatus) {
+        if (!oldStatus.equals(targetStatus)) {
             reindexColumnWithoutTicket(boardId, oldStatus, ticket.getId());
         }
 
@@ -233,8 +359,8 @@ public class TicketController {
         reindexTickets(targetTickets);
     }
 
-    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat.
-    private void reindexColumnWithoutTicket(Long boardId, TicketStatus status, Long ticketId) {
+    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat. (Auf String angepasst)
+    private void reindexColumnWithoutTicket(Long boardId, String status, Long ticketId) {
         List<Ticket> tickets = new ArrayList<>(
             ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status)
         );

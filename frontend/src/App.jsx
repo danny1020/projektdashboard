@@ -3,6 +3,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import BoardDetail from './components/BoardDetail';
+import StatsDashboard from './components/StatsDashboard';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -17,6 +18,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/board/:id" element={<PrivateRoute><BoardDetail /></PrivateRoute>} />
+        <Route path="/dashboard/:boardId" element={<StatsDashboard />} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
