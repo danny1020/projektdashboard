@@ -832,7 +832,6 @@ export default function BoardDetail() {
       )}
 
       {/* TICKET MODAL */}
-      {/* TICKET MODAL */}
       {isTicketModalOpen && (
         <div className="modal-overlay" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -845,85 +844,84 @@ export default function BoardDetail() {
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', color: '#f8fafc',
             maxHeight: '90vh', overflowY: 'auto', position: 'relative'
           }}>
-            {/* HEADER MIT SCHLIESSEN-BUTTON */}
+            {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
                 {ticketModalMode === 'create' ? '➕ Neues Ticket erstellen' : '📝 Ticket bearbeiten'}
               </h3>
-              <button
-                onClick={closeTicketModal}
-                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}
-              >
-                &times;
-              </button>
+              <button onClick={closeTicketModal} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
             </div>
 
             {/* FORMULAR */}
             <form onSubmit={handleTicketSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Titel</label>
                 <input type="text" value={ticketForm.title} onChange={(e) => setTicketForm({...ticketForm, title: e.target.value})} required style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
               </div>
 
-              <div className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Beschreibung</label>
                 <textarea rows="3" value={ticketForm.description || ''} onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '10px', color: '#fff' }} />
               </div>
 
-              {/* BUTTONS */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                <button type="submit" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 20px', cursor: 'pointer' }}>Speichern</button>
-                {ticketModalMode === 'edit' && (
-                  <button type="button" onClick={handleDeleteTicket} style={{ backgroundColor: '#f43f5e', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 14px', cursor: 'pointer' }}>🗑️ Löschen</button>
-                )}
+              {/* DETAILS: Status, Priorität, Zuweisung (Dropdowns) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                {/* Status */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Status</label>
+                  <select value={ticketForm.status} onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                    <option value="BACKLOG">Backlog</option>
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Arbeit</option>
+                    <option value="FERTIG">Fertig</option>
+                  </select>
+                </div>
+
+                {/* Priorität Dropdown */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Priorität</label>
+                  <select value={ticketForm.priority || ''} onChange={(e) => setTicketForm({...ticketForm, priority: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                    <option value="">Keine</option>
+                    <option value="Niedrig">Niedrig</option>
+                    <option value="Mittel">Mittel</option>
+                    <option value="Hoch">Hoch</option>
+                  </select>
+                </div>
+
+                {/* Zuweisung Dropdown (Hier muss deine Liste der Board-Mitglieder rein) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Zuweisung</label>
+                  <select value={ticketForm.assigneeUsername || ''} onChange={(e) => setTicketForm({...ticketForm, assigneeUsername: e.target.value})} style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '8px', color: '#fff' }}>
+                    <option value="">Nicht zugewiesen</option>
+                    {boardMembers?.map(member => (
+                      <option key={member.user.username} value={member.user.username}>{member.user.username}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '10px' }}>
+                <button type="submit" style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 20px', cursor: 'pointer', width: '100%' }}>Speichern</button>
               </div>
             </form>
 
             {/* KOMMENTAR-SEKTION */}
-            {/* KOMMENTAR-SEKTION */}
             {ticketModalMode === 'edit' && (
               <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #334155' }}>
-                <h4 style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Diskussion</h4>
-
-                {/* Kommentarliste */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {activeTicket?.comments?.length > 0 ? (
-                    activeTicket.comments.map((c, i) => (
-                      <div key={i} style={{
-                        backgroundColor: '#1e293b',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        borderBottomLeftRadius: '2px',
-                        borderLeft: '4px solid #6366f1'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#818cf8' }}>{c.author}</span>
-                          <span style={{ fontSize: '0.65rem', color: '#475569' }}>{new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0', wordBreak: 'break-word' }}>{c.text}</p>
+                <h4 style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '12px' }}>Diskussion</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
+                  {activeTicket?.comments?.length > 0 ? activeTicket.comments.map((c, i) => (
+                    <div key={i} style={{ backgroundColor: '#0f172a', padding: '10px 14px', borderRadius: '12px', borderLeft: '4px solid #6366f1' }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#818cf8' }}>{c.author}</span>
                       </div>
-                    ))
-                  ) : (
-                    <p style={{ fontSize: '0.8rem', color: '#475569', textAlign: 'center' }}>Noch keine Kommentare.</p>
-                  )}
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#e2e8f0' }}>{c.text}</p>
+                    </div>
+                  )) : <p style={{ fontSize: '0.8rem', color: '#475569', textAlign: 'center' }}>Noch keine Kommentare.</p>}
                 </div>
-
-                {/* Input-Bereich */}
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Schreibe einen Kommentar..."
-                    style={{ flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '10px', color: '#fff', fontSize: '0.9rem' }}
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    disabled={isSaving}
-                    style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', padding: '0 16px', cursor: 'pointer', fontWeight: '600' }}
-                  >
-                    {isSaving ? '...' : 'Senden'}
-                  </button>
+                  <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Schreibe einen Kommentar..." style={{ flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '10px', color: '#fff' }} />
+                  <button onClick={handleAddComment} disabled={isSaving} style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', padding: '0 16px', cursor: 'pointer' }}>Senden</button>
                 </div>
               </div>
             )}

@@ -219,16 +219,13 @@ public class TicketController {
             return forbidden("Du darfst in diesem Board keine Spalten löschen.");
         }
 
-        // Sicherheitscheck: Die Standardspalte "TODO" sollte nicht gelöscht werden
         if ("TODO".equalsIgnoreCase(status)) {
             return badRequest("Die Standard-Spalte 'TODO' kann nicht gelöscht werden.");
         }
 
-        // Alle Tickets aus der zu löschenden Spalte holen
         List<Ticket> ticketsInColumn = ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status);
 
         if (!ticketsInColumn.isEmpty()) {
-            // Option: Verschiebe alle Tickets in die "TODO"-Spalte
             List<Ticket> todoTickets = new ArrayList<>(
                 ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, "TODO")
             );
@@ -238,14 +235,11 @@ public class TicketController {
                 todoTickets.add(ticket);
             }
 
-            // Indizes für die TODO-Spalte neu aufbauen und alles speichern
             reindexTickets(todoTickets);
         }
 
         return ResponseEntity.ok(Map.of("message", "Spalte erfolgreich gelöscht und Tickets verschoben."));
     }
-
-    // Füge diesen Endpunkt in deinen de.fom.projektdashboard.controller.TicketController ein:
 
     @DeleteMapping("/{id}")
     @Transactional
@@ -255,7 +249,6 @@ public class TicketController {
             return notFound("Ticket wurde nicht gefunden.");
         }
 
-        // Berechtigungsprüfung
         Optional<BoardMember> membership = boardMemberRepository.findByBoardIdAndUserUsername(
             ticket.getBoard().getId(), principal.getName()
         );
@@ -270,10 +263,8 @@ public class TicketController {
         String status = ticket.getStatus();
         Long ticketId = ticket.getId();
 
-        // 1. Ticket löschen
         ticketRepository.delete(ticket);
 
-        // 2. Lücke im orderIndex der betroffenen Spalte schließen
         reindexColumnWithoutTicket(boardId, status, ticketId);
 
         return ResponseEntity.ok(Map.of("message", "Ticket erfolgreich gelöscht."));
@@ -289,17 +280,14 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "Zugriff verweigert."));
         }
 
-        // 2. Alle Tickets des Boards laden
         List<Ticket> tickets = ticketRepository.findByBoardIdOrderByStatusAscOrderIndexAscCreatedAtAsc(boardId);
 
-        // 3. Dynamische Gruppierung nach Status
         Map<String, Long> statusCounts = tickets.stream()
             .collect(Collectors.groupingBy(
                 t -> t.getStatus() != null ? t.getStatus() : "UNBEKANNT",
                 Collectors.counting()
             ));
 
-        // 4. Antwort zusammenstellen
         Map<String, Object> response = new HashMap<>();
         response.put("totalTickets", (long) tickets.size());
         response.put("statusCounts", statusCounts);
@@ -309,7 +297,6 @@ public class TicketController {
 
     @GetMapping("/board/{boardId}/tickets")
     public List<Ticket> getTickets(@PathVariable Long boardId) {
-        // Ändere es hier von .findAll() oder was auch immer dort steht zu:
         return ticketRepository.findByBoardId(boardId);
     }
 
@@ -318,8 +305,6 @@ public class TicketController {
         Comment comment = commentRepository.findById(commentId)
             .orElseThrow(() -> new RuntimeException("Kommentar nicht gefunden"));
 
-        // Sicherheitscheck: Darf der User den Kommentar löschen?
-        // Hier prüfen wir, ob der Name des Authors mit dem eingeloggten User übereinstimmt
         if (!comment.getAuthor().equals(principal.getName())) {
             return ResponseEntity.status(403).body("Du darfst nur deine eigenen Kommentare löschen.");
         }
