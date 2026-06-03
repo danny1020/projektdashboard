@@ -81,17 +81,14 @@ public class BoardColumnController {
     @DeleteMapping("/{statusValue}")
     public ResponseEntity<?> deleteColumn(@PathVariable Long boardId, @PathVariable String statusValue) {
 
-        // Sicherheitsmaßnahme im Backend: Die "TODO"-Spalte bleibt unlöschbar
         if ("TODO".equalsIgnoreCase(statusValue)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Die Standard-Spalte 'TODO' darf nicht gelöscht werden."));
         }
 
         return boardColumnRepository.findByBoardIdAndColumnKey(boardId, statusValue.toUpperCase())
             .map(column -> {
-                // Verknüpfte Tickets sicher zurück nach TODO verschieben
                 ticketRepository.updateStatusForBoard(boardId, statusValue.toUpperCase(), "TODO");
 
-                // Spalte entfernen
                 boardColumnRepository.delete(column);
 
                 return ResponseEntity.ok(Map.of("message", "Spalte gelöscht. Tickets wurden nach 'TODO' verschoben."));

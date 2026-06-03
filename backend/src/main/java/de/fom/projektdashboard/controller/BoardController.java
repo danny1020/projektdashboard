@@ -183,21 +183,18 @@ public class BoardController {
 
     @GetMapping("/stats/{boardId}")
     public ResponseEntity<?> getBoardStats(@PathVariable Long boardId, Principal principal) {
-        // Zugriff prüfen
         if (boardMemberRepository.findByBoardIdAndUserUsername(boardId, principal.getName()).isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Zugriff verweigert"));
         }
 
         List<Ticket> tickets = ticketRepository.findByBoardIdOrderByStatusAscOrderIndexAscCreatedAtAsc(boardId);
 
-        // Gruppierung
         Map<String, Long> statusCounts = tickets.stream()
             .collect(Collectors.groupingBy(
                 t -> t.getStatus() == null ? "TODO" : t.getStatus(),
                 Collectors.counting()
             ));
 
-        // DTO-Struktur: Das Frontend erwartet genau das
         Map<String, Object> response = new HashMap<>();
         response.put("totalTickets", (long) tickets.size());
         response.put("statusCounts", statusCounts);
