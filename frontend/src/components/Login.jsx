@@ -19,7 +19,7 @@ export default function Login() {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem('token', data.token); // JWT Token speichern
-        navigate('/dashboard');
+        navigate('/boards');
       } else {
         alert('Login fehlgeschlagen! Bitte überprüfe deine Daten.');
       }

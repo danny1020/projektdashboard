@@ -49,9 +49,8 @@ public class Ticket {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    // Ticket.java
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference // <--- PROBIER DAS ANSTELLE VON @JsonIgnore IN DER ENTITY!
+    @JsonManagedReference
     private List<Comment> comments = new ArrayList<>();
 
     // Setzt Standardwerte und Zeitstempel, bevor ein Ticket erstmals gespeichert wird.

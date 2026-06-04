@@ -71,7 +71,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Edle Navbar */
+/* Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -83,7 +83,7 @@ body {
   border-bottom: 1px solid var(--border);
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 100; /* Sehr hoch, damit nichts darüber liegt */
+  z-index: 100;
   box-shadow: var(--shadow);
   box-sizing: border-box;
 }
@@ -135,12 +135,12 @@ body {
   min-height: 100vh;
 }
 
-/* Nav-Rechts-Bereich */
+/* Rechte Navigation */
 .nav-actions {
   display: flex;
   gap: 15px;
   align-items: center;
-  position: relative; /* Wichtig für das Dropdown! */
+  position: relative;
 }
 
 .theme-toggle {
@@ -219,11 +219,11 @@ body {
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
 }
 
-/* FIX: Das reparierte Einladungs-Dropdown */
+/* Einladungs-Dropdown */
 .dropdown-menu {
   position: absolute;
   right: 0;
-  top: 50px; /* Direkt unter der Glocke */
+  top: 50px;
   background: var(--surface-solid);
   border: 1px solid rgba(124, 58, 237, 0.4);
   border-radius: 12px;
@@ -244,7 +244,7 @@ body {
   border-bottom: none;
 }
 
-/* Modernes Board Grid */
+/* Board Grid */
 .board-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -255,7 +255,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Neon Glassmorphism Board Karte */
+/* Board Karte */
 .board-card {
   background: var(--surface);
   backdrop-filter: blur(10px);
@@ -630,7 +630,7 @@ body {
   }
 }
 
-/* FIX: Einheitliche Inputs für ALLE Modals */
+/* Einheitliche Inputs für Modals */
 .input-group {
   margin-bottom: 20px;
   display: flex;
@@ -669,7 +669,7 @@ body {
   box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
 }
 
-/* FIX: Einheitliche Buttons für ALLE Modals */
+/* Einheitliche Buttons für Modals */
 .btn-primary {
   width: 100%;
   padding: 12px;
@@ -714,7 +714,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Über der Navbar */
+  z-index: 1000;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -926,7 +926,7 @@ body {
   box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
 }
 
-/* Roter Logout-Button im Dropdown */
+/* Logout-Button im Dropdown */
 .logout-dropdown-btn {
   width: 100%;
   background: var(--danger-soft);
@@ -947,7 +947,7 @@ body {
   border-color: var(--danger);
 }
 
-/* Styling für die Login & Register Container */
+/* Login und Registrierung */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -1006,11 +1006,11 @@ body {
   text-decoration: underline;
 }
 
-/* Erlaube horizontales Scrollen im Kanban Board bei vielen Spalten */
+/* Horizontales Scrollen bei vielen Spalten */
 .board-detail-page {
   margin: 100px auto 40px auto;
   padding: 0 40px;
-  max-width: 100%; /* Erweitert auf volle Breite */
+  max-width: 100%;
   box-sizing: border-box;
 }
 
@@ -1018,11 +1018,11 @@ body {
   display: grid;
   gap: 20px;
   align-items: start;
-  overflow-x: auto; /* Aktiviert horizontales Scrollen bei Übergröße */
+  overflow-x: auto;
   padding-bottom: 15px;
 }
 
-/* Schickere Scrollbars für das Board */
+/* Scrollbars für das Board */
 .ticket-columns::-webkit-scrollbar {
   height: 8px;
 }

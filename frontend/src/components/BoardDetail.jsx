@@ -41,7 +41,7 @@ export default function BoardDetail() {
   const authHeaders = { Authorization: `Bearer ${token}` };
   const [boardTitle, setBoardTitle] = useState(() => localStorage.getItem(`board_title_${id}`) || `Board ${id}`);
 
-  // Initialer State mit Standard-Fallbacks (wird direkt im Anschluss durch DB-Daten ersetzt)
+  // Fallback-Spalten, falls für das Board noch keine Spalten lokal bekannt sind.
   const [columns, setColumns] = useState(() => {
     const saved = localStorage.getItem(`board_cols_${id}`);
     return saved ? JSON.parse(saved) : [
@@ -110,7 +110,7 @@ export default function BoardDetail() {
         localStorage.setItem(`board_title_${id}`, fetchedTickets[0].boardTitle);
       }
 
-      // AUTOMATISCHE SPALTENERKENNUNG AUS DER DB (Falls Tickets neue Statuswerte besitzen)
+      // Ergänzt Spalten, falls alte Tickets noch Statuswerte enthalten, die lokal nicht bekannt sind.
       setColumns((prevColumns) => {
         const existingValues = prevColumns.map(col => col.value);
         const newCols = [...prevColumns];
@@ -496,7 +496,7 @@ export default function BoardDetail() {
             {/* BUTTON ZUR STATSDASHBOARD SEITE */}
             <button
               className="icon-btn"
-              onClick={() => navigate(`/dashboard/${id}`)}
+              onClick={() => navigate(`/board/${id}/analysis`)}
               style={{
                 backgroundColor: 'var(--primary-soft)',
                 border: '1px solid var(--primary)',
@@ -517,14 +517,14 @@ export default function BoardDetail() {
                 e.target.style.color = 'var(--primary)';
               }}
             >
-              📈 Board Analyse anzeigen
+              Board Analyse anzeigen
             </button>
 
             <button className="icon-btn" onClick={() => setIsColumnModalOpen(true)}>
-              ➕ Spalte hinzufügen
+              + Spalte hinzufügen
             </button>
             <button className="icon-btn" onClick={fetchTickets} disabled={isLoading || isSaving}>
-              🔄 Aktualisieren
+              ↻ Aktualisieren
             </button>
             <button className="btn-primary" style={{ width: 'auto' }} onClick={openCreateModal} disabled={isSaving}>
               + Neues Ticket
@@ -670,7 +670,7 @@ export default function BoardDetail() {
                         onMouseEnter={(e) => !isSaving && (e.target.style.opacity = 1)}
                         onMouseLeave={(e) => !isSaving && (e.target.style.opacity = 0.7)}
                       >
-                        ✕
+                        x
                       </button>
                     )}
                   </div>
@@ -709,7 +709,7 @@ export default function BoardDetail() {
                       return (
                         <div
                           className={[
-                            ticket.status === 'DONE' ? 'ticket-card done' : 'ticket-card',
+                            'ticket-card',
                             draggedTicketId === ticket.id ? 'dragging' : '',
                             dropTarget?.ticketId === ticket.id && dropTarget.position === 'before' ? 'drop-before' : '',
                             dropTarget?.ticketId === ticket.id && dropTarget.position === 'after' ? 'drop-after' : ''
@@ -729,7 +729,7 @@ export default function BoardDetail() {
                             flexDirection: 'column',
                             gap: '8px',
                             boxShadow: 'var(--shadow)',
-                            opacity: draggedTicketId === ticket.id ? 0.3 : (ticket.status === 'DONE' ? 0.6 : 1),
+                            opacity: draggedTicketId === ticket.id ? 0.3 : 1,
                             transform: draggedTicketId === ticket.id ? 'scale(0.98)' : 'none',
                             transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
                           }}
@@ -769,8 +769,7 @@ export default function BoardDetail() {
                               color: 'var(--text-strong)',
                               fontSize: '0.9rem',
                               fontWeight: '600',
-                              lineHeight: '1.4',
-                              textDecoration: ticket.status === 'DONE' ? 'line-through' : 'none'
+                              lineHeight: '1.4'
                             }}>
                               {ticket.title}
                             </strong>
@@ -872,7 +871,7 @@ export default function BoardDetail() {
             {/* HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
-                {ticketModalMode === 'create' ? '➕ Neues Ticket erstellen' : '📝 Ticket bearbeiten'}
+                {ticketModalMode === 'create' ? '+ Neues Ticket erstellen' : 'Ticket bearbeiten'}
               </h3>
               <button onClick={closeTicketModal} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
             </div>

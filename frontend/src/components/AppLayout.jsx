@@ -31,7 +31,7 @@ export default function AppLayout({ children, actions, currentUser }) {
         <div className="app-header-left">
           <h2>PROJECT HUB</h2>
           <nav className="main-nav">
-            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/boards" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Boards
             </NavLink>
           </nav>
