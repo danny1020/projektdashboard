@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/boards/{boardId}/columns")
-@CrossOrigin(origins = "*") // An deine Security-Anforderungen anpassen
+@CrossOrigin(origins = "*")
 public class BoardColumnController {
 
     @Autowired
@@ -22,13 +22,13 @@ public class BoardColumnController {
     @Autowired
     private TicketRepository ticketRepository;
 
-    // 1. Alle Spalten für ein Board abrufen (Falls das Frontend diese initial laden möchte)
+    // Lädt die Spalten eines Boards in ihrer gespeicherten Reihenfolge.
     @GetMapping
     public ResponseEntity<List<BoardColumn>> getColumns(@PathVariable Long boardId) {
         return ResponseEntity.ok(boardColumnRepository.findByBoardIdOrderByPositionAsc(boardId));
     }
 
-    // 2. NEUE SPALTE HINZUFÜGEN
+    // Erstellt eine neue Statusspalte für ein Board.
     @PostMapping
     public ResponseEntity<?> createColumn(@PathVariable Long boardId, @RequestBody Map<String, String> payload) {
         String columnKey = payload.get("value");
@@ -56,7 +56,7 @@ public class BoardColumnController {
         return ResponseEntity.status(HttpStatus.CREATED).body(boardColumnRepository.save(newColumn));
     }
 
-    // 3. SPALTENNAME INLINE UMBENENNEN
+    // Aktualisiert den sichtbaren Namen einer bestehenden Spalte.
     @PutMapping("/{statusValue}")
     public ResponseEntity<?> renameColumn(
         @PathVariable Long boardId,
@@ -77,7 +77,7 @@ public class BoardColumnController {
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Spalte nicht gefunden.")));
     }
 
-    // 4. SPALTE LÖSCHEN & TICKETS NACH TODO VERSCHIEBEN
+    // Löscht eine Spalte und verschiebt betroffene Tickets zurück nach TODO.
     @DeleteMapping("/{statusValue}")
     public ResponseEntity<?> deleteColumn(@PathVariable Long boardId, @PathVariable String statusValue) {
 

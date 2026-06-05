@@ -270,8 +270,6 @@ public class TicketController {
         return ResponseEntity.ok(Map.of("message", "Ticket erfolgreich gelöscht."));
     }
 
-    // Füge diesen Endpunkt in deinen de.fom.projektdashboard.controller.TicketController ein:
-
     @GetMapping("/stats/{boardId}")
     public ResponseEntity<?> getBoardStats(@PathVariable Long boardId, Principal principal) {
         // 1. Zugriff prüfen
@@ -323,7 +321,7 @@ public class TicketController {
         return ticket.getOrderIndex() == null ? 0 : ticket.getOrderIndex();
     }
 
-    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu. (Auf String angepasst)
+    // Sortiert ein Ticket in die Zielspalte ein und nummeriert die Spalte neu.
     private void moveTicketTo(Ticket ticket, String targetStatus, int targetOrderIndex) {
         Long boardId = ticket.getBoard().getId();
         String oldStatus = ticket.getStatus();
@@ -344,7 +342,7 @@ public class TicketController {
         reindexTickets(targetTickets);
     }
 
-    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat. (Auf String angepasst)
+    // Entfernt Lücken in einer Spalte, nachdem ein Ticket diese Spalte verlassen hat.
     private void reindexColumnWithoutTicket(Long boardId, String status, Long ticketId) {
         List<Ticket> tickets = new ArrayList<>(
             ticketRepository.findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(boardId, status)
@@ -370,10 +368,13 @@ public class TicketController {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    // Setzt Aufgabe als Standard, wenn im Formular kein Typ ausgewählt wurde.
+    // Setzt Task als Standard, wenn im Formular kein Typ ausgewählt wurde.
     private String normalizeTicketType(String value) {
         String normalized = normalizeText(value);
-        return normalized == null ? "Aufgabe" : normalized;
+        if ("Aufgabe".equalsIgnoreCase(normalized)) {
+            return "Task";
+        }
+        return normalized == null ? "Task" : normalized;
     }
 
     // Baut eine einheitliche 400-Fehlerantwort.

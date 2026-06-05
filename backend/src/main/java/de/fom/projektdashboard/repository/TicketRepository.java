@@ -17,7 +17,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByBoardIdAndStatusOrderByOrderIndexAscCreatedAtAsc(Long boardId, String status);
 
-    // TicketRepository.java
     @EntityGraph(attributePaths = {"comments"})
     List<Ticket> findByBoardId(Long boardId);
 

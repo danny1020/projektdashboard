@@ -36,7 +36,7 @@ public class BoardController {
         this.ticketRepository = ticketRepository;
     }
 
-    // 1. Alle Boards des aktuellen Users holen (Eigene + Boards wo er Mitglied ist)
+    // Lädt alle Boards, in denen der aktuelle User Mitglied ist.
     @GetMapping
     public ResponseEntity<List<Board>> getMyBoards(Principal principal) {
         List<BoardMember> memberships = boardMemberRepository.findByUserUsername(principal.getName());
@@ -47,7 +47,7 @@ public class BoardController {
 
         return ResponseEntity.ok(myBoards);
     }
-    // 2. Neues Board erstellen (Eingeloggter User wird Owner)
+    // Erstellt ein neues Board und setzt den aktuellen User als Owner.
     @PostMapping
     public ResponseEntity<?> createBoard(@RequestBody Board board, Principal principal) {
         User user = userRepository.findByUsername(principal.getName())
@@ -61,7 +61,7 @@ public class BoardController {
         return ResponseEntity.ok(savedBoard);
     }
 
-    // 3. Board editieren (Nur Owner oder Admin darf das)
+    // Aktualisiert ein Board, wenn der aktuelle User Owner oder Admin ist.
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBoard(@PathVariable Long id, @RequestBody Board boardDetails, Principal principal) {
         Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("Board nicht gefunden"));
@@ -79,13 +79,13 @@ public class BoardController {
         return ResponseEntity.ok(boardRepository.save(board));
     }
 
-    // 4. Mitglieder eines Boards abrufen
+    // Lädt die Mitglieder eines Boards.
     @GetMapping("/{id}/members")
     public ResponseEntity<List<BoardMember>> getMembers(@PathVariable Long id) {
         return ResponseEntity.ok(boardMemberRepository.findByBoardId(id));
     }
 
-    // 5. Rolle eines Mitglieds ändern
+    // Ändert die Rolle eines Board-Mitglieds.
     @PutMapping("/{id}/members/{memberId}")
     public ResponseEntity<?> changeRole(@PathVariable Long id, @PathVariable Long memberId, @RequestParam BoardRole role, Principal principal) {
         BoardMember operator = boardMemberRepository.findByBoardIdAndUserUsername(id, principal.getName())
@@ -101,13 +101,13 @@ public class BoardController {
         return ResponseEntity.ok("Rolle aktualisiert");
     }
 
-    // 7. Offene Einladungen für die Glocke abrufen
+    // Lädt offene Einladungen für den aktuellen User.
     @GetMapping("/invitations")
     public ResponseEntity<List<Invitation>> getInvitations(Principal principal) {
         return ResponseEntity.ok(invitationRepository.findByInvitedUserUsernameAndAcceptedFalse(principal.getName()));
     }
 
-    // 8. Einladung annehmen
+    // Nimmt eine offene Einladung an.
     @PostMapping("/invitations/{inviteId}/accept")
     public ResponseEntity<?> acceptInvitation(@PathVariable Long inviteId) {
         Invitation invitation = invitationRepository.findById(inviteId).orElseThrow(() -> new RuntimeException("Einladung nicht gefunden"));
@@ -118,7 +118,7 @@ public class BoardController {
         return ResponseEntity.ok("Einladung angenommen!");
     }
 
-    // 1. Board per Passwort beitreten
+    // Fügt den aktuellen User per Board-Passwort hinzu.
     @PostMapping("/{id}/join")
     public ResponseEntity<?> joinBoard(@PathVariable Long id, @RequestParam String password, Principal principal) {
         Board board = boardRepository.findById(id)
@@ -145,7 +145,7 @@ public class BoardController {
         return ResponseEntity.ok("Erfolgreich über Passwort beigetreten!");
     }
 
-    // 2. Erweitere die inviteUser-Methode um die Existenzprüfung
+    // Erstellt eine Einladung für einen bestehenden User.
     @PostMapping("/{id}/invite")
     public ResponseEntity<?> inviteUser(@PathVariable Long id, @RequestParam String username, Principal principal) {
         Board board = boardRepository.findById(id)

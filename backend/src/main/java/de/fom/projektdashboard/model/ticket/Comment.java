@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// Comment.java
 @Entity
 @Data
 @Table(name = "comment")
@@ -17,11 +16,11 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String text;
-    private String author; // Oder User-Objekt verknüpfen
+    private String author;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id")
-    @JsonIgnore // <--- DAS IST WICHTIG!
+    @JsonIgnore
     private Ticket ticket;
 }
